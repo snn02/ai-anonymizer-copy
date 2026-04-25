@@ -2,7 +2,7 @@
 
 ## Статус
 
-Workflow для `v1` согласован. Feature-пакеты создаются по итерациям в `openspec/changes/`.
+`v1` завершена. Feature-пакеты итераций перенесены в архив `openspec/archive/`.
 
 ## Где лежат артефакты
 
@@ -11,18 +11,22 @@ Workflow для `v1` согласован. Feature-пакеты создаютс
 
 ## Активные feature-пакеты v1
 
-- `v1-i2-run-api-adapter`:
-  - `../../../openspec/changes/v1-i2-run-api-adapter/proposal.md`
-  - `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
-  - `../../../openspec/changes/v1-i2-run-api-adapter/specs/v1-i2-core/spec.md`
+- нет.
+
+## Закрытые feature-пакеты v1
+
 - `v1-i1-foundation-preflight-discovery`:
-  - `../../../openspec/changes/v1-i1-foundation-preflight-discovery/proposal.md`
-  - `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`
-  - `../../../openspec/changes/v1-i1-foundation-preflight-discovery/specs/v1-i1-core/spec.md`
+  - `../../../openspec/archive/v1-i1-foundation-preflight-discovery/proposal.md`
+  - `../../../openspec/archive/v1-i1-foundation-preflight-discovery/tasks.md`
+  - `../../../openspec/archive/v1-i1-foundation-preflight-discovery/specs/v1-i1-core/spec.md`
+- `v1-i2-run-api-adapter`:
+  - `../../../openspec/archive/v1-i2-run-api-adapter/proposal.md`
+  - `../../../openspec/archive/v1-i2-run-api-adapter/tasks.md`
+  - `../../../openspec/archive/v1-i2-run-api-adapter/specs/v1-i2-core/spec.md`
 
 ## Подготовленные следующие итерации
 
-- нет; выполняется `v1-i2-run-api-adapter`.
+- нет; планирование следующих итераций ведется в рамках `v2`.
 
 ## Правило
 

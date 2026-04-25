@@ -1,129 +1,184 @@
 ﻿# user guide
 
-## Назначение
+## для кого это руководство
 
-Руководство по работе с CLI `anonym` в ежедневном режиме.
+Этот документ для пользователя AI IDE, который хочет запустить `anonym` и получить рабочий результат с первого раза.
 
-## Термины
+Поддержаны два сценария:
+1. у вас уже есть готовый `anonym.exe`;
+2. вы сделали `git clone` репозитория и запускаете через Go.
 
-- `raw_path`: абсолютный путь к исходным файлам вне workspace IDE.
-- `output_path`: папка в workspace для анонимизированных результатов.
-- `id`: идентификатор файла из `anonym list`.
+## что делает инструмент
 
-## Рекомендуемый поток [v1]
+`anonym` — это CLI для безопасной анонимизации файлов:
+1. `scan` — находит файлы в `raw_path` и кладет их в локальную очередь;
+2. `list` — показывает очередь (`id`, путь, статус);
+3. `run <id|path>` — отправляет выбранный файл в API и сохраняет результат в `output_path`;
+4. `doctor` — проверяет, что окружение настроено корректно.
 
-1. `anonym scan`
-2. `anonym list`
-3. `anonym run <id>`
+## обязательная модель папок
 
-Результат:
-- в `output_path` появляется анонимизированный файл с безопасным техническим именем;
-- исходный файл в `raw_path` не удаляется и не перемещается.
+Перед первым запуском создайте три папки:
+1. `raw_path` — папка с исходными файлами, обязательно вне IDE workspace;
+2. `workspace_path` — рабочая папка вашего проекта в AI IDE;
+3. `output_path` — папка для результатов, обязательно внутри `workspace_path`.
 
-## Команды [v1]
+Пример:
+1. `D:\secure-raw` (`raw_path`)
+2. `C:\work\my-ai-project` (`workspace_path`)
+3. `C:\work\my-ai-project\anonymized` (`output_path`)
 
-- `anonym scan`
-- `anonym list`
-- `anonym run <id|path>`
-- `anonym doctor`
+## обязательные параметры и секреты
 
-Примечание:
-- в `v1` команда `run` не поддерживает CLI override-флаги `--fields`, `--tags`, `--tags-numeration`; используются значения из конфигурации/окружения.
+### параметры (минимум для старта)
 
-### `anonym doctor` (старт `v1-i1`)
+Обязательные параметры для `v1`:
+1. `--raw-path` или `ANON_RAW_PATH`
+2. `--output-path` или `ANON_OUTPUT_PATH`
+3. `--workspace-path` или `ANON_WORKSPACE_PATH`
+4. `--api-base-url` или `ANON_API_BASE_URL` (только `https`)
+5. `--api-partner-id` или `ANON_API_PARTNER_ID`
+6. `--allowed-hosts` или `ANON_ALLOWED_HOSTS`
+7. `--max-parallel-runs 1` (или `ANON_MAX_PARALLEL_RUNS=1`)
 
-Минимальный preflight в текущей итерации проверяет:
-- `raw_path` находится вне `workspace_path`;
-- `raw_path` существует, доступен и является директорией;
-- `output_path` существует, доступен и является директорией;
-- `output_path` проверяется на запись через write-probe;
-- `api.base_url` использует `https`;
-- host из `api.base_url` входит в `allowed_hosts`;
-- наличие секрета для `api_partner_id` в OS secret store (service `ai-anonymizer/api`, account = `api_partner_id`);
-- доступность `GET /v1/tasks/anonymization_fields` с timeout;
-- `max_parallel_runs=1` для `v1`.
+Рекомендуемые лимиты:
+1. `--max-file-size-mb 25`
+2. `--max-pages 300`
+3. `--request-timeout-sec 5`
 
-Пример запуска:
-- `anonym doctor --raw-path D:/secure-raw --output-path C:/work/project/anonymized --workspace-path C:/work/project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --request-timeout-sec 5 --max-parallel-runs 1`
+### секреты (обязательно)
 
-### `anonym scan` и `anonym list` (промежуточный результат `v1-i1`)
+Секреты должны быть в OS secret store (не в `yaml`, не в `.env`):
+1. `service`: `ai-anonymizer/api`
+2. `account`: значение `api.partner_id` (например, `partner-1`)  
+   `value`: API secret/token
+3. `account`: значение `audit.hmac_key_id` (обычно `audit-hmac-v1`)  
+   `value`: секрет для HMAC аудита
 
-- `scan` выполняет только локальное безопасное обнаружение в `raw_path` и сохраняет очередь в `<workspace>/.anonym/catalog.json`;
-- `scan` применяет лимит `max_file_size_mb` и не индексирует oversized-файлы;
-- `list` выводит элементы очереди в формате `id path status`;
-- `scan/list` не отправляют файлы в API.
+Проверка, что всё настроено:
+1. запустите `doctor`;
+2. если секретов нет, `doctor` вернет понятную ошибку.
 
-## Настройка конфигурации [v1]
+## вариант 1: у вас уже есть `anonym.exe`
 
-1. Скопировать шаблон `config.example.yaml` в локальный рабочий конфиг.
-2. Задать `raw_path` вне workspace IDE.
-3. Задать `output_path` внутри workspace IDE.
-4. Заполнить `api.base_url`, `api.partner_id`, `api.fields`.
-5. Проверить `security.allowed_hosts` и лимиты.
-6. Выполнить `anonym doctor`.
+### что должно быть под рукой
 
-Важно:
-- API-ключ не хранится в конфиг-файле и не передается в plaintext-переменных.
-- Секреты читаются только из OS secret store.
-- При конфликте источников приоритет: flags > env > config file.
+1. файл `anonym.exe` (например, `C:\tools\anonym\anonym.exe`);
+2. подготовленные папки `raw_path/workspace_path/output_path`;
+3. настроенные секреты в OS secret store.
 
-## Параметры приложения [v1]
+### первый запуск
 
-Ниже — полный каталог параметров из конфигурационного контракта.
+```powershell
+C:\tools\anonym\anonym.exe doctor `
+  --raw-path D:\secure-raw `
+  --output-path C:\work\my-ai-project\anonymized `
+  --workspace-path C:\work\my-ai-project `
+  --api-base-url https://api.company.local `
+  --api-partner-id partner-1 `
+  --allowed-hosts api.company.local `
+  --max-file-size-mb 25 `
+  --max-pages 300 `
+  --request-timeout-sec 5 `
+  --max-parallel-runs 1
+```
 
-| Параметр | Назначение | Где задается | Кто меняет |
-|---|---|---|---|
-| `paths.raw_path` | путь к исходным файлам вне workspace | `--raw-path`, `ANON_RAW_PATH`, `config.yaml` | пользователь/администратор рабочего места |
-| `paths.output_path` | путь для анонимизированных файлов в workspace | `--output-path`, `ANON_OUTPUT_PATH`, `config.yaml` | пользователь/администратор рабочего места |
-| `api.base_url` | базовый URL API анонимизации | `--api-base-url`, `ANON_API_BASE_URL`, `config.yaml` | администратор/техлид |
-| `api.partner_id` | идентификатор партнера для вызовов API | `--api-partner-id`, `ANON_API_PARTNER_ID`, `config.yaml` | администратор/техлид |
-| `api.fields` | профиль/поля анонимизации | `ANON_API_FIELDS`, `config.yaml` | администратор/техлид |
-| `api.tags` | дополнительные теги запроса | `ANON_API_TAGS`, `config.yaml` | администратор/техлид |
-| `api.tags_numeration` | режим нумерации тегов (`0/1`) | `ANON_API_TAGS_NUMERATION`, `config.yaml` | администратор/техлид |
-| `limits.max_file_size_mb` | лимит размера входного файла | `--max-file-size-mb`, `ANON_MAX_FILE_SIZE_MB`, `config.yaml` | администратор/техлид |
-| `limits.max_pages` | лимит страниц для поддерживаемых форматов | `ANON_MAX_PAGES`, `config.yaml` | администратор/техлид |
-| `limits.request_timeout_sec` | timeout API-запроса | `--request-timeout-sec`, `ANON_REQUEST_TIMEOUT_SEC`, `config.yaml` | администратор/техлид |
-| `limits.max_parallel_runs` | лимит параллельных запусков (для `v1` = `1`) | `--max-parallel-runs`, `ANON_MAX_PARALLEL_RUNS`, `config.yaml` | администратор/техлид |
-| `security.allowed_hosts` | allowlist допустимых API host | `--allowed-hosts`, `ANON_ALLOWED_HOSTS`, `config.yaml` | администратор/техлид |
-| `security.require_tls_verify` | обязательная проверка TLS-сертификата | `ANON_REQUIRE_TLS_VERIFY`, `config.yaml` | администратор/техлид |
-| `audit.retention_days` | срок хранения аудита | `ANON_AUDIT_RETENTION_DAYS`, `config.yaml` | администратор/техлид |
-| `audit.hmac_key_id` | ключ HMAC для `file-id` в аудит-логах | `ANON_AUDIT_HMAC_KEY_ID`, `config.yaml` | администратор/техлид |
-| `catalog.db_path` | путь хранения локального каталога | `ANON_CATALOG_DB_PATH`, `config.yaml` | администратор/техлид |
-| `logging.level` | уровень логирования | `ANON_LOG_LEVEL`, `config.yaml` | администратор/техлид |
-| `logging.format` | формат логов | `ANON_LOG_FORMAT`, `config.yaml` | администратор/техлид |
+Если в ответе `doctor: ok`, можно работать.
 
-## Статус параметров в текущей реализации v1
+### рабочий цикл
 
-- Уже применяются в runtime: `raw_path`, `output_path`, `api.base_url`, `api.partner_id`, `security.allowed_hosts`, `limits.max_file_size_mb`, `limits.max_pages`, `limits.request_timeout_sec`, `limits.max_parallel_runs`, `audit.retention_days`, `audit.hmac_key_id`.
-- В `run` дополнительно применяются проверки path hardening для Windows (`ADS` и reparse-point deny).
-- Параметры целевого конфигурационного контракта, которые должны быть синхронизированы с runtime отдельными задачами: `security.require_tls_verify`, `catalog.db_path`, `logging.*`, `api.tags*`.
+```powershell
+C:\tools\anonym\anonym.exe scan --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 
-## Аудит [v1]
+C:\tools\anonym\anonym.exe list --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 
-- журнал хранится в `<workspace>/.anonym/audit.log` (формат JSONL);
-- `file_id` в журнале хранится только в виде HMAC-идентификатора;
-- raw-путь, исходное имя файла и секреты в журнал не записываются;
-- при каждой новой записи применяется retention по `audit.retention_days`.
+C:\tools\anonym\anonym.exe run <id> --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+```
 
-## Варианты запуска [v1+v2]
+## вариант 2: вы сделали `git clone`
 
-- По `id` из списка.
-- По точному относительному пути внутри `raw_path`.
-- По примерному имени (с обработкой неоднозначности).
+### какие папки нужны в репозитории
 
-## Требования к сообщениям CLI [v1+v2]
+Для запуска через `go run` должны быть:
+1. `cmd/anonym/` (точка входа CLI)
+2. `internal/` (runtime-модули)
+3. `go.mod`
+4. `go.sum`
+5. `config.example.yaml` (шаблон параметров)
 
-- четкий итог операции;
-- `id` и путь результата;
-- код и причина ошибки без утечки PII;
-- понятный следующий шаг.
+### запуск из исходников
 
-## Что добавляется в v2
+Из корня репозитория:
 
-- MCP-обертка над тем же trusted-core CLI.
-- Операционные регламенты секретов и эксплуатации.
+```powershell
+go run ./cmd/anonym doctor `
+  --raw-path D:\secure-raw `
+  --output-path C:\work\my-ai-project\anonymized `
+  --workspace-path C:\work\my-ai-project `
+  --api-base-url https://api.company.local `
+  --api-partner-id partner-1 `
+  --allowed-hosts api.company.local `
+  --max-file-size-mb 25 `
+  --max-pages 300 `
+  --request-timeout-sec 5 `
+  --max-parallel-runs 1
+```
 
-## Известные ограничения v1 (risks)
+Дальше используйте те же команды `scan`, `list`, `run`, заменив `anonym.exe` на `go run ./cmd/anonym`.
 
-- Текущий page-counter для PDF в `run` реализован эвристически (по структуре PDF), поэтому для отдельных сложных PDF возможна неточная оценка числа страниц.
-- Для `DOCX` первичный источник количества страниц — `docProps/app.xml`; при отсутствии метаданных используется fallback по page-break в `word/document.xml`.
+## как задавать параметры без ошибок
+
+### безопасный способ для первого запуска
+
+Используйте CLI-флаги в каждой команде. Так проще диагностировать ошибки.
+
+### через переменные окружения (когда команды запускаются часто)
+
+Пример для PowerShell:
+
+```powershell
+$env:ANON_RAW_PATH="D:\secure-raw"
+$env:ANON_OUTPUT_PATH="C:\work\my-ai-project\anonymized"
+$env:ANON_WORKSPACE_PATH="C:\work\my-ai-project"
+$env:ANON_API_BASE_URL="https://api.company.local"
+$env:ANON_API_PARTNER_ID="partner-1"
+$env:ANON_ALLOWED_HOSTS="api.company.local"
+$env:ANON_MAX_FILE_SIZE_MB="25"
+$env:ANON_MAX_PAGES="300"
+$env:ANON_REQUEST_TIMEOUT_SEC="5"
+$env:ANON_MAX_PARALLEL_RUNS="1"
+$env:ANON_AUDIT_RETENTION_DAYS="30"
+$env:ANON_AUDIT_HMAC_KEY_ID="audit-hmac-v1"
+```
+
+После этого можно запускать короче:
+
+```powershell
+go run ./cmd/anonym doctor
+go run ./cmd/anonym scan
+go run ./cmd/anonym list
+go run ./cmd/anonym run <id>
+```
+
+## важные замечания по v1
+
+1. `run` в `v1` не поддерживает CLI override-флаги `--fields`, `--tags`, `--tags-numeration`.
+2. Секреты из `config.yaml` и plaintext env не используются как fallback.
+3. Аудит пишется в `<workspace>/.anonym/audit.log` в формате JSONL:
+   - `file_id` хранится только как HMAC;
+   - исходный raw-файл и секреты в лог не пишутся.
+4. `config.example.yaml` используйте как шаблон и чек-лист параметров; для надежного запуска в `v1` задавайте параметры через `flags/env`.
+
+## быстрый чек-лист перед началом
+
+1. `raw_path` вне workspace, `output_path` внутри workspace.
+2. `api.base_url` начинается с `https://`.
+3. Host API входит в `allowed_hosts`.
+4. В OS secret store есть два секрета (`api.partner_id` и `audit.hmac_key_id`).
+5. `max_parallel_runs = 1`.
+6. `doctor` возвращает `doctor: ok`.
+
+## известные ограничения v1
+
+1. Подсчет страниц PDF в `run` эвристический (по структуре PDF), в редких сложных файлах возможна неточность.
+2. Для DOCX основной источник страниц — `docProps/app.xml`; при отсутствии метаданных применяется fallback по page-break в `word/document.xml`.

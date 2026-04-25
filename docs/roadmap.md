@@ -7,8 +7,8 @@
 ## v1
 
 - Цель: безопасный sidecar CLI для анонимизации.
-- Статус: in progress.
-- Текущая итерация: `v1-i2`.
+- Статус: completed.
+- Итерации: `v1-i1`, `v1-i2` завершены.
 - План версии: `versions/v1/plan.md`.
 - OpenSpec версии: `versions/v1/openspec.md`.
 - Лог прогресса: `versions/v1/action-log.md`.
