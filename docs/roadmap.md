@@ -14,7 +14,7 @@
   - хранить секреты в OS secret store без plaintext fallback;
   - добавить аудит без PII/секретов с HMAC-идентификатором;
   - закрепить адаптер результата `file_anonymization` тестами.
-- Статус: in progress (итерация `v1-i1` запланирована).
+- Статус: in progress (текущая итерация `v1-i2`).
 - План версии: `versions/v1/plan.md`.
 
 ## v2
