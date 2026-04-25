@@ -13,9 +13,12 @@ import (
 	"ai-anonymizer/internal/config"
 	"ai-anonymizer/internal/preflight"
 	"ai-anonymizer/internal/scanner"
+	"ai-anonymizer/internal/secrets"
 )
 
-var doctorDeps = preflight.DoctorDeps{}
+var doctorDeps = preflight.DoctorDeps{
+	SecretChecker: secrets.NewOSSecretChecker(),
+}
 
 func main() {
 	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {

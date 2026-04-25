@@ -117,3 +117,19 @@ func TestValidateDoctorFailsWhenSecretCheckerErrors(t *testing.T) {
 		t.Fatal("expected error when secret store check fails")
 	}
 }
+
+func TestValidateDoctorFailsWhenSecretCheckerIsNotConfigured(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	cfg := buildDoctorConfig(t, server.URL)
+
+	err := ValidateDoctor(cfg, DoctorDeps{
+		HTTPClient: server.Client(),
+	})
+	if err == nil {
+		t.Fatal("expected error when secret checker is not configured")
+	}
+}

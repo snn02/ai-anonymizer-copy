@@ -12,6 +12,12 @@ import (
 	"ai-anonymizer/internal/preflight"
 )
 
+type alwaysTrueSecretChecker struct{}
+
+func (alwaysTrueSecretChecker) HasSecret(partnerID string) (bool, error) {
+	return true, nil
+}
+
 func TestRunDoctorSuccess(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/tasks/anonymization_fields" {
@@ -24,7 +30,7 @@ func TestRunDoctorSuccess(t *testing.T) {
 	prevDeps := doctorDeps
 	doctorDeps = preflight.DoctorDeps{
 		HTTPClient:    server.Client(),
-		SecretChecker: preflight.AllowAllSecretChecker{},
+		SecretChecker: alwaysTrueSecretChecker{},
 	}
 	defer func() { doctorDeps = prevDeps }()
 
