@@ -1,0 +1,96 @@
+package config
+
+import (
+	"errors"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+)
+
+type Config struct {
+	RawPath         string
+	OutputPath      string
+	WorkspacePath   string
+	CatalogPath     string
+	APIBaseURL      string
+	APIAllowedHosts []string
+	MaxParallelRuns int
+}
+
+type LoadOptions struct {
+	ConfigPath      string
+	RawPath         string
+	OutputPath      string
+	WorkspacePath   string
+	APIBaseURL      string
+	AllowedHostsCSV string
+	MaxParallelRuns int
+}
+
+func Load(opts LoadOptions) (Config, error) {
+	cfg := Config{
+		RawPath:         firstNonEmpty(opts.RawPath, os.Getenv("ANON_RAW_PATH")),
+		OutputPath:      firstNonEmpty(opts.OutputPath, os.Getenv("ANON_OUTPUT_PATH")),
+		WorkspacePath:   firstNonEmpty(opts.WorkspacePath, os.Getenv("ANON_WORKSPACE_PATH")),
+		APIBaseURL:      firstNonEmpty(opts.APIBaseURL, os.Getenv("ANON_API_BASE_URL")),
+		APIAllowedHosts: splitCSV(firstNonEmpty(opts.AllowedHostsCSV, os.Getenv("ANON_ALLOWED_HOSTS"))),
+		MaxParallelRuns: 1,
+	}
+
+	cfg.MaxParallelRuns = resolveParallelRuns(opts.MaxParallelRuns)
+
+	// Для первой итерации файл конфигурации резервируется как расширение.
+	_ = opts.ConfigPath
+
+	if cfg.RawPath == "" {
+		return Config{}, errors.New("config: raw_path is required")
+	}
+	if cfg.OutputPath == "" {
+		return Config{}, errors.New("config: output_path is required")
+	}
+	if cfg.WorkspacePath == "" {
+		return Config{}, errors.New("config: workspace_path is required")
+	}
+	if cfg.APIBaseURL == "" {
+		return Config{}, errors.New("config: api.base_url is required")
+	}
+
+	cfg.RawPath = filepath.Clean(cfg.RawPath)
+	cfg.OutputPath = filepath.Clean(cfg.OutputPath)
+	cfg.WorkspacePath = filepath.Clean(cfg.WorkspacePath)
+	cfg.CatalogPath = filepath.Join(cfg.WorkspacePath, ".anonym", "catalog.json")
+
+	return cfg, nil
+}
+
+func resolveParallelRuns(flagValue int) int {
+	if flagValue > 0 {
+		return flagValue
+	}
+	envValue := strings.TrimSpace(os.Getenv("ANON_MAX_PARALLEL_RUNS"))
+	if envValue == "" {
+		return 1
+	}
+	n, err := strconv.Atoi(envValue)
+	if err != nil || n <= 0 {
+		return 1
+	}
+	return n
+}
+
+func splitCSV(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return []string{}
+	}
+	return strings.Split(raw, ",")
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
+}
