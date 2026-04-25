@@ -2,48 +2,47 @@
 
 ## Контекст
 
-Итерация `v1-i1` закрывает foundation для `doctor/scan/list`: preflight, безопасный discovery, локальная очередь и базовые лимиты discovery.
-
-Следующий завершенный и тестируемый результат для `v1` — управляемый запуск отправки по `anonym run` с обработкой ответа API через адаптер контракта.
-
-## Обязательные условия планирования v1-i2
-
-1. Для security-пунктов, затронутых в `v1-i2`, в `tasks.md` должна быть трассировка:
-   - `requirement` -> `task` -> `test` -> `runtime evidence`.
-2. Для security-задач DoD обязателен:
-   - runtime-реализация в production-пути;
-   - минимум один негативный тест;
-   - отсутствие небезопасного production fallback.
-3. При планировании `v1-i2` явно зафиксировать статус незакрытых security-пунктов из `v1-i1`
-   и либо включить их в scope с отдельным task, либо отдельно задокументировать перенос.
+Итерация `v1-i1` закрыла foundation для `doctor/scan/list` и security-baseline preflight.  
+Итерация `v1-i2` должна дать законченный и тестируемый результат для команды `anonym run`.
 
 ## Цель итерации
 
-Реализовать безопасный поток `run`:
-- выбор элемента очереди по `id|path`;
+Реализовать безопасный runtime-поток `run`:
+- выбор цели по `id|path` и контроль неоднозначности;
 - явная отправка в `POST /v1/tasks/file_anonymization`;
 - адаптация ответа API в стабильный внутренний контракт;
-- запись результата в `output_path` с безопасным техническим именем без PII.
+- обновление статусов очереди (`sent/succeeded/failed`);
+- сохранение результата в `output_path` с PII-safe именем.
+
+## Обязательные условия планирования v1-i2
+
+1. Для security-пунктов в scope фиксируется трассировка:
+   - `requirement -> task -> test -> runtime evidence`.
+2. Для каждой security-задачи задается DoD:
+   - runtime реализован в production-пути;
+   - есть минимум один негативный тест;
+   - нет небезопасного production fallback.
+3. Незакрытые security-пункты из `v1-i1` либо включаются в scope `v1-i2`, либо явно переносятся отдельной записью.
 
 ## In scope
 
-1. Команда `anonym run <id|path>` и разрешение цели запуска.
-2. API client + adapter для контракта `file_anonymization`.
-3. Обновление статусов очереди (`sent/succeeded/failed`) и ошибок.
-4. Базовые проверки лимитов и timeout в runtime-path `run`.
+1. `anonym run <id|path>` и resolver цели запуска.
+2. API client + adapter для `file_anonymization`.
+3. Обновление статусов каталога и кодов ошибок.
+4. Runtime-проверки лимитов/timeout/сетевой политики в пути `run`.
 5. Тесты:
-   - unit для resolver/adapter/error mapping;
-   - integration для API adapter и catalog status transitions;
-   - e2e сценарий `scan -> list -> run`.
+   - unit: resolver/adapter/error mapping;
+   - integration: API adapter + transitions catalog status;
+   - e2e: `scan -> list -> run`.
 
 ## Out of scope
 
 - MCP-обертка (`v2`).
-- Расширенные операционные политики beyond `v1` (rotation/revocation playbooks).
+- Расширенные operational-политики beyond `v1` (rotation/revocation playbooks).
 
 ## Критерии приемки
 
 1. `run` выполняет отправку только по явной команде пользователя.
-2. Контракт ответа API стабильно нормализуется адаптером.
-3. Результат в `output_path` сохраняется с PII-safe именем.
-4. Статусы очереди и ошибки предсказуемо отражают outcome выполнения.
+2. Ответ API стабильно нормализуется adapter-слоем.
+3. Результат пишется в `output_path` с безопасным техническим именем.
+4. Статусы очереди и ошибки предсказуемо отражают итог выполнения.

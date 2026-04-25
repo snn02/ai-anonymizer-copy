@@ -11,6 +11,10 @@ Workflow для `v1` согласован. Feature-пакеты создаютс
 
 ## Активные feature-пакеты v1
 
+- `v1-i2-run-api-adapter`:
+  - `../../../openspec/changes/v1-i2-run-api-adapter/proposal.md`
+  - `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
+  - `../../../openspec/changes/v1-i2-run-api-adapter/specs/v1-i2-core/spec.md`
 - `v1-i1-foundation-preflight-discovery`:
   - `../../../openspec/changes/v1-i1-foundation-preflight-discovery/proposal.md`
   - `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`
@@ -18,8 +22,7 @@ Workflow для `v1` согласован. Feature-пакеты создаютс
 
 ## Подготовленные следующие итерации
 
-- `v1-i2-run-api-adapter`:
-  - `../../../openspec/changes/v1-i2-run-api-adapter/proposal.md`
+- нет; выполняется `v1-i2-run-api-adapter`.
 
 ## Правило
 
@@ -41,7 +44,7 @@ Workflow для `v1` согласован. Feature-пакеты создаютс
    - default-заглушки вида `allow-all` допустимы только в тестах или под явным non-production feature-flag;
    - закрывать security-задачу при активном production fallback запрещено.
 4. Гейт закрытия итерации:
-   - перед переводом чекбокса в `[x]` выполняется проверка соответствия `plan.md` по всем security-пунктам, попавшим в scope итерации;
+   - перед переводом чекбокса в `[x]` выполняется проверка соответствия `plan.md` по всем пунктам, попавшим в scope итерации;
    - результаты проверки фиксируются в `docs/versions/v1/action-log.md`.
 
 ## Чек-лист планирования v1-i2

@@ -128,3 +128,9 @@
 - Тип: реакция
 - Описание: по актуализированным правилам OpenSpec зафиксирован DoD/evidence для security-задачи `doctor` (runtime, негативные тесты, отсутствие allow-all fallback); подтверждено прогоном `go test ./...` с зеленым статусом всех пакетов.
 - Ссылка: `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: обновлен OpenSpec-пакет итерации `v1-i2-run-api-adapter`: зафиксированы `proposal`, декомпозиция `tasks` с трассировкой `requirement -> task -> test -> runtime evidence`, security DoD и `spec` с проверяемыми сценариями `run/api-adapter/status/security`.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/proposal.md`

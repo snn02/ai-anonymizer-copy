@@ -31,6 +31,25 @@
 Артефакты OpenSpec:
 - feature-пакет: `../../../openspec/changes/v1-i1-foundation-preflight-discovery/`.
 
+### Итерация 2 (v1-i2): run + api adapter
+
+Цель итерации:
+- получить законченный и тестируемый runtime-поток явного запуска анонимизации через `anonym run <id|path>`.
+
+Фичи итерации:
+1. `anonym run <id|path>` выполняет явную отправку в API только по команде пользователя.
+2. API-ответ `file_anonymization` обрабатывается через adapter внутреннего контракта.
+3. Каталог очереди поддерживает переходы `scanned -> sent -> succeeded/failed`.
+4. Результат сохраняется в `output_path` с PII-safe именем по technical id.
+5. В runtime-пути `run` применяются guardrails: `https`, TLS verify, allowlist, timeout, лимиты, запрет production fallback.
+
+Границы итерации:
+- MCP-слой и интеграции `v2` не входят в scope;
+- расширенные operational-политики секретов beyond `v1` не входят в scope.
+
+Артефакты OpenSpec:
+- feature-пакет: `../../../openspec/changes/v1-i2-run-api-adapter/`.
+
 ## Функциональные требования v1
 
 - Команды CLI: `anonym scan`, `anonym list`, `anonym run`, `anonym doctor`.
