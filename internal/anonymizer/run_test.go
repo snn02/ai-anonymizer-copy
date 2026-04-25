@@ -1,10 +1,13 @@
 package anonymizer
 
 import (
+	"archive/zip"
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -165,6 +168,60 @@ func TestExecuteRejectsWhenPagesExceedLimitForText(t *testing.T) {
 	}
 }
 
+func TestExecuteRejectsWhenPagesExceedLimitForPDF(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.MaxPages = 2
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/multipage.pdf"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, buildFakePDFWithPages(3), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		SecretGetter: fakeSecretGetter{value: "token"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "exceeds max_pages") {
+		t.Fatalf("expected max_pages error for pdf, got %v", err)
+	}
+}
+
+func TestExecuteRejectsWhenPagesExceedLimitForDOCX(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.MaxPages = 1
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/multipage.docx"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := writeFakeDOCXWithPages(filePath, 3); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		SecretGetter: fakeSecretGetter{value: "token"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "exceeds max_pages") {
+		t.Fatalf("expected max_pages error for docx, got %v", err)
+	}
+}
+
 func TestExecuteRejectsWindowsADSPath(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("windows-only ADS policy")
@@ -251,4 +308,42 @@ func baseConfig(t *testing.T) config.Config {
 		MaxPages:          300,
 		MaxParallelRuns:   1,
 	}
+}
+
+func buildFakePDFWithPages(pages int) []byte {
+	var buf bytes.Buffer
+	buf.WriteString("%PDF-1.4\n")
+	for i := 0; i < pages; i++ {
+		buf.WriteString("<< /Type /Page >>\n")
+	}
+	buf.WriteString("%%EOF\n")
+	return buf.Bytes()
+}
+
+func writeFakeDOCXWithPages(path string, pages int) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := zip.NewWriter(file)
+	app, err := writer.Create("docProps/app.xml")
+	if err != nil {
+		return err
+	}
+	_, err = app.Write([]byte("<Properties><Pages>" + strconv.Itoa(pages) + "</Pages></Properties>"))
+	if err != nil {
+		return err
+	}
+
+	doc, err := writer.Create("word/document.xml")
+	if err != nil {
+		return err
+	}
+	_, err = doc.Write([]byte("<w:document><w:body><w:p>content</w:p></w:body></w:document>"))
+	if err != nil {
+		return err
+	}
+	return writer.Close()
 }

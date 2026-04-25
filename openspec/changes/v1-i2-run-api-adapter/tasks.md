@@ -47,7 +47,7 @@
 ### T6. security guardrails in run path
 
 - [x] enforce `https` + tls verify + host allowlist для `run`;
-- [x] enforce timeout и обязательные лимиты runtime (`max_file_size`, `max_pages`);
+- [x] enforce timeout и обязательные лимиты runtime (`max_file_size`, `max_pages` для PDF/DOCX/текстовых форматов);
 - [x] enforce Windows path hardening для `run` (ADS/reparse-point deny);
 - [x] запретить небезопасные production fallback.
 
@@ -62,7 +62,7 @@
 - [x] U5: run rejects non-https endpoint.
 - [x] U6: run rejects host вне allowlist.
 - [x] U7: run enforces timeout/limit violations.
-- [x] U7a: run rejects documents that exceed `max_pages` for supported formats.
+- [x] U7a: run rejects PDF/DOCX/text documents that exceed `max_pages`.
 - [x] U8: run path не имеет production `allow-all` fallback.
 - [x] U8a: run rejects Windows ADS/reparse paths.
 

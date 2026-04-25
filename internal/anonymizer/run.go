@@ -1,9 +1,11 @@
 package anonymizer
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -11,8 +13,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -221,6 +225,26 @@ func validateMaxPages(filePath string, maxPages int) error {
 func detectPages(filePath string) (int, bool, error) {
 	ext := strings.ToLower(filepath.Ext(filePath))
 	switch ext {
+	case ".pdf":
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return 0, true, err
+		}
+		pagePattern := regexp.MustCompile(`/Type\s*/Page(?:\s|/|>|$)`)
+		pages := len(pagePattern.FindAll(data, -1))
+		if pages <= 0 {
+			pages = 1
+		}
+		return pages, true, nil
+	case ".docx":
+		pages, err := detectDocxPages(filePath)
+		if err != nil {
+			return 0, true, err
+		}
+		if pages <= 0 {
+			pages = 1
+		}
+		return pages, true, nil
 	case ".txt", ".md", ".csv", ".json", ".xml", ".log":
 		data, err := os.ReadFile(filePath)
 		if err != nil {
@@ -234,6 +258,89 @@ func detectPages(filePath string) (int, bool, error) {
 	default:
 		return 0, false, nil
 	}
+}
+
+type docxAppProperties struct {
+	Pages string `xml:"Pages"`
+}
+
+func detectDocxPages(filePath string) (int, error) {
+	reader, err := zip.OpenReader(filePath)
+	if err != nil {
+		return 0, err
+	}
+	defer reader.Close()
+
+	appPages := 0
+	fallbackPages := 0
+	for _, file := range reader.File {
+		switch strings.ToLower(file.Name) {
+		case "docprops/app.xml":
+			value, err := parseDocxAppPages(file)
+			if err != nil {
+				return 0, err
+			}
+			appPages = value
+		case "word/document.xml":
+			value, err := parseDocxDocumentPageBreaks(file)
+			if err != nil {
+				return 0, err
+			}
+			fallbackPages = value
+		}
+	}
+
+	if appPages > 0 {
+		return appPages, nil
+	}
+	if fallbackPages > 0 {
+		return fallbackPages, nil
+	}
+	return 1, nil
+}
+
+func parseDocxAppPages(file *zip.File) (int, error) {
+	rc, err := file.Open()
+	if err != nil {
+		return 0, err
+	}
+	defer rc.Close()
+
+	data, err := io.ReadAll(rc)
+	if err != nil {
+		return 0, err
+	}
+	var props docxAppProperties
+	if err := xml.Unmarshal(data, &props); err != nil {
+		return 0, nil
+	}
+	if strings.TrimSpace(props.Pages) == "" {
+		return 0, nil
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(props.Pages))
+	if err != nil || n <= 0 {
+		return 0, nil
+	}
+	return n, nil
+}
+
+func parseDocxDocumentPageBreaks(file *zip.File) (int, error) {
+	rc, err := file.Open()
+	if err != nil {
+		return 0, err
+	}
+	defer rc.Close()
+
+	data, err := io.ReadAll(rc)
+	if err != nil {
+		return 0, err
+	}
+	breaks := bytes.Count(data, []byte(`w:lastRenderedPageBreak`)) +
+		bytes.Count(data, []byte(`w:type="page"`))
+	if len(data) == 0 {
+		return 0, nil
+	}
+	return breaks + 1, nil
 }
 
 func hasADSPath(path string) bool {

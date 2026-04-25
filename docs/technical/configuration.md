@@ -25,7 +25,7 @@
 | `paths.raw_path` | string (abs path) | да | - | `D:/secure-raw` | `ANON_RAW_PATH` |
 | `paths.output_path` | string (abs path) | да | - | `C:/work/project/anonymized` | `ANON_OUTPUT_PATH` |
 | `api.base_url` | string (https url) | да | - | `https://api.company.local` | `ANON_API_BASE_URL` |
-| `api.partner_id` | string (uuid) | да | - | `00000000-0000-0000-0000-000000000000` | `ANON_PARTNER_ID` |
+| `api.partner_id` | string (uuid) | да | - | `00000000-0000-0000-0000-000000000000` | `ANON_API_PARTNER_ID` |
 | `api.fields` | string | да | `anonymizer` | `anonymizer` | `ANON_API_FIELDS` |
 | `api.tags` | string list | нет | `[]` | `["fio","phone"]` | `ANON_API_TAGS` |
 | `api.tags_numeration` | int (`0|1`) | нет | `1` | `1` | `ANON_API_TAGS_NUMERATION` |

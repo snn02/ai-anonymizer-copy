@@ -164,3 +164,9 @@
 - Тип: реакция
 - Описание: подтвержден зеленый прогон `go test ./...` после внедрения `max_pages` и Windows hardening в `run`; OpenSpec `v1-i2` синхронизирован с фактическим runtime evidence.
 - Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: устранены замечания техлид-ревью по `v1-i2`: `max_pages` в `run` расширен на целевые форматы PDF и DOCX (добавлены тесты), а в технической документации синхронизировано имя env-переменной `api.partner_id` с фактическим кодом (`ANON_API_PARTNER_ID`).
+- Ссылка: `../../technical/configuration.md`
