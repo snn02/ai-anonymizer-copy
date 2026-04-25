@@ -5,10 +5,10 @@
 | requirement (v1 plan) | task | test | runtime evidence |
 |---|---|---|---|
 | `run <id|path>` запускает отправку явно | T1, T2 | U1, I1, E1 | CLI `anonym run` вызывает отправку только в `run` |
-| адаптер `file_anonymization` обязателен | T3 | U2, I2 | adapter-слой в `internal/anonymizer/client` |
+| адаптер `file_anonymization` обязателен | T3 | U2, I2 | adapter-слой в `internal/anonymizer/run.go` |
 | статусы очереди `sent/succeeded/failed` | T4 | U3, I3, E2 | переходы статусов в каталоге |
 | PII-safe output naming | T5 | U4, E3 | запись результата в `output_path` по technical id |
-| security run path (https/tls/allowlist/timeout/limits/no-fallback) | T6 | U5-U8, I4 | runtime guardrails в production пути `run` |
+| security run path (https/tls/allowlist/timeout/limits/no-fallback) | T6 | U5-U8, I4 | runtime guardrails в `internal/anonymizer/run.go` production пути `run` |
 
 ## security DoD (для T6)
 
@@ -47,7 +47,8 @@
 ### T6. security guardrails in run path
 
 - [x] enforce `https` + tls verify + host allowlist для `run`;
-- [x] enforce timeout и обязательные лимиты runtime;
+- [x] enforce timeout и обязательные лимиты runtime (`max_file_size`, `max_pages`);
+- [x] enforce Windows path hardening для `run` (ADS/reparse-point deny);
 - [x] запретить небезопасные production fallback.
 
 ## tests
@@ -61,7 +62,9 @@
 - [x] U5: run rejects non-https endpoint.
 - [x] U6: run rejects host вне allowlist.
 - [x] U7: run enforces timeout/limit violations.
+- [x] U7a: run rejects documents that exceed `max_pages` for supported formats.
 - [x] U8: run path не имеет production `allow-all` fallback.
+- [x] U8a: run rejects Windows ADS/reparse paths.
 
 ### integration/e2e (I*/E*)
 

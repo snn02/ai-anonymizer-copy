@@ -18,6 +18,7 @@ type Config struct {
 	APIAllowedHosts   []string
 	RequestTimeoutSec int
 	MaxFileSizeMB     int
+	MaxPages          int
 	MaxParallelRuns   int
 }
 
@@ -31,6 +32,7 @@ type LoadOptions struct {
 	AllowedHostsCSV   string
 	RequestTimeoutSec int
 	MaxFileSizeMB     int
+	MaxPages          int
 	MaxParallelRuns   int
 }
 
@@ -44,6 +46,7 @@ func Load(opts LoadOptions) (Config, error) {
 		APIAllowedHosts:   splitCSV(firstNonEmpty(opts.AllowedHostsCSV, os.Getenv("ANON_ALLOWED_HOSTS"))),
 		RequestTimeoutSec: resolveRequestTimeoutSec(opts.RequestTimeoutSec),
 		MaxFileSizeMB:     resolveMaxFileSizeMB(opts.MaxFileSizeMB),
+		MaxPages:          resolveMaxPages(opts.MaxPages),
 		MaxParallelRuns:   1,
 	}
 
@@ -114,6 +117,21 @@ func resolveMaxFileSizeMB(flagValue int) int {
 	n, err := strconv.Atoi(envValue)
 	if err != nil || n <= 0 {
 		return 25
+	}
+	return n
+}
+
+func resolveMaxPages(flagValue int) int {
+	if flagValue > 0 {
+		return flagValue
+	}
+	envValue := strings.TrimSpace(os.Getenv("ANON_MAX_PAGES"))
+	if envValue == "" {
+		return 300
+	}
+	n, err := strconv.Atoi(envValue)
+	if err != nil || n <= 0 {
+		return 300
 	}
 	return n
 }

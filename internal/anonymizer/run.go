@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -38,6 +39,8 @@ type AmbiguousMatchError struct {
 	Query      string
 	Candidates []catalog.Item
 }
+
+var reparsePointCheck = isReparsePoint
 
 func (e AmbiguousMatchError) Error() string {
 	return fmt.Sprintf("run: multiple matches for %q", e.Query)
@@ -74,7 +77,7 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	}
 
 	absPath := filepath.Join(cfg.RawPath, filepath.FromSlash(selected.Path))
-	if err := validateRunFile(cfg.RawPath, absPath, cfg.MaxFileSizeMB); err != nil {
+	if err := validateRunFile(cfg.RawPath, absPath, cfg.MaxFileSizeMB, cfg.MaxPages); err != nil {
 		return Result{}, err
 	}
 
@@ -152,7 +155,7 @@ func normalizeMatchValue(s string) string {
 	return strings.ToLower(filepath.ToSlash(filepath.Clean(strings.TrimSpace(s))))
 }
 
-func validateRunFile(rawPath, filePath string, maxFileSizeMB int) error {
+func validateRunFile(rawPath, filePath string, maxFileSizeMB int, maxPages int) error {
 	rootAbs, err := filepath.Abs(rawPath)
 	if err != nil {
 		return fmt.Errorf("run: invalid raw_path: %w", err)
@@ -167,6 +170,15 @@ func validateRunFile(rawPath, filePath string, maxFileSizeMB int) error {
 	if file != root && !strings.HasPrefix(file, root+string(filepath.Separator)) {
 		return errors.New("run: selected file is outside raw_path")
 	}
+	if runtime.GOOS == "windows" {
+		if hasADSPath(fileAbs) {
+			return errors.New("run: windows ADS paths are not allowed")
+		}
+		if err := validateNoReparsePoints(rootAbs, fileAbs); err != nil {
+			return err
+		}
+	}
+
 	info, err := os.Lstat(fileAbs)
 	if err != nil {
 		return fmt.Errorf("run: selected file is not accessible: %w", err)
@@ -181,6 +193,78 @@ func validateRunFile(rawPath, filePath string, maxFileSizeMB int) error {
 	limitBytes := int64(maxFileSizeMB) * 1024 * 1024
 	if maxFileSizeMB > 0 && info.Size() > limitBytes {
 		return fmt.Errorf("run: file exceeds max_file_size_mb (%d)", maxFileSizeMB)
+	}
+
+	if err := validateMaxPages(fileAbs, maxPages); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateMaxPages(filePath string, maxPages int) error {
+	if maxPages <= 0 {
+		return fmt.Errorf("run: max_pages must be positive, got %d", maxPages)
+	}
+	pages, supported, err := detectPages(filePath)
+	if err != nil {
+		return fmt.Errorf("run: page-count check failed: %w", err)
+	}
+	if !supported {
+		return nil
+	}
+	if pages > maxPages {
+		return fmt.Errorf("run: document exceeds max_pages (%d)", maxPages)
+	}
+	return nil
+}
+
+func detectPages(filePath string) (int, bool, error) {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	switch ext {
+	case ".txt", ".md", ".csv", ".json", ".xml", ".log":
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return 0, true, err
+		}
+		pages := 1
+		if len(data) > 0 {
+			pages += bytes.Count(data, []byte("\f"))
+		}
+		return pages, true, nil
+	default:
+		return 0, false, nil
+	}
+}
+
+func hasADSPath(path string) bool {
+	if runtime.GOOS != "windows" {
+		return false
+	}
+	clean := filepath.Clean(path)
+	volume := filepath.VolumeName(clean)
+	withoutVolume := strings.TrimPrefix(clean, volume)
+	return strings.Contains(withoutVolume, ":")
+}
+
+func validateNoReparsePoints(rootAbs, fileAbs string) error {
+	rel, err := filepath.Rel(rootAbs, fileAbs)
+	if err != nil {
+		return fmt.Errorf("run: cannot evaluate path policy: %w", err)
+	}
+	current := rootAbs
+	parts := strings.Split(rel, string(filepath.Separator))
+	for _, part := range parts {
+		if part == "" || part == "." {
+			continue
+		}
+		current = filepath.Join(current, part)
+		isReparse, err := reparsePointCheck(current)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("run: reparse-point check failed: %w", err)
+		}
+		if isReparse {
+			return errors.New("run: reparse points are not allowed in selected path")
+		}
 	}
 	return nil
 }

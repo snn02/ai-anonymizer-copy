@@ -146,3 +146,21 @@
 - Тип: реакция
 - Описание: подтверждено покрытие ключевых проверок `v1-i2` (явный запуск run, ambiguous fuzzy policy, API adapter, статусы каталога, security guardrails `https/allowlist/limits/no-fallback`) и зеленый прогон `go test ./...`.
 - Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/specs/v1-i2-core/spec.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: в пользовательской документации добавлен полный каталог параметров приложения с источниками (`flags/env/config`) и зонами ответственности по изменению лимитов/безопасности; отдельно зафиксирован статус параметров, уже применяемых в runtime `v1`.
+- Ссылка: `../../user-guide.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: по `v1-i2` закрыты незавершенные security/reliability пункты: в runtime `run` добавлены `max_pages` (для поддерживаемых форматов) и усиленный Windows path hardening (запрет ADS и reparse points); добавлены/обновлены unit и integration проверки.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: подтвержден зеленый прогон `go test ./...` после внедрения `max_pages` и Windows hardening в `run`; OpenSpec `v1-i2` синхронизирован с фактическим runtime evidence.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`

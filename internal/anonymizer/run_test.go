@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -137,6 +138,93 @@ func TestExecuteRejectsWhenFileExceedsMaxSize(t *testing.T) {
 	}
 }
 
+func TestExecuteRejectsWhenPagesExceedLimitForText(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.MaxPages = 2
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/multipage.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("p1\f p2\f p3"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		SecretGetter: fakeSecretGetter{value: "token"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "exceeds max_pages") {
+		t.Fatalf("expected max_pages error, got %v", err)
+	}
+}
+
+func TestExecuteRejectsWindowsADSPath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("windows-only ADS policy")
+	}
+
+	cfg := baseConfig(t)
+	rel := "in/sample.txt:secret"
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		SecretGetter: fakeSecretGetter{value: "token"},
+	})
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "ads") {
+		t.Fatalf("expected ADS policy error, got %v", err)
+	}
+}
+
+func TestExecuteRejectsWindowsReparsePointInPath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("windows-only reparse policy")
+	}
+
+	cfg := baseConfig(t)
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	prevDetector := reparsePointCheck
+	reparsePointCheck = func(path string) (bool, error) {
+		if strings.EqualFold(path, filepath.Join(cfg.RawPath, "in")) {
+			return true, nil
+		}
+		return false, nil
+	}
+	defer func() { reparsePointCheck = prevDetector }()
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		SecretGetter: fakeSecretGetter{value: "token"},
+	})
+	if err == nil || !strings.Contains(strings.ToLower(err.Error()), "reparse") {
+		t.Fatalf("expected reparse policy error, got %v", err)
+	}
+}
+
 func baseConfig(t *testing.T) config.Config {
 	t.Helper()
 
@@ -160,6 +248,7 @@ func baseConfig(t *testing.T) config.Config {
 		APIAllowedHosts:   []string{"api.company.local"},
 		RequestTimeoutSec: 5,
 		MaxFileSizeMB:     25,
+		MaxPages:          300,
 		MaxParallelRuns:   1,
 	}
 }

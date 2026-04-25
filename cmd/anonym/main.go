@@ -64,6 +64,7 @@ func runDoctor(args []string, stdout io.Writer) error {
 	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
 	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
 	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
+	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
 	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
 
 	if err := fs.Parse(args); err != nil {
@@ -80,6 +81,7 @@ func runDoctor(args []string, stdout io.Writer) error {
 		AllowedHostsCSV:   *allowedHosts,
 		RequestTimeoutSec: *requestTimeoutSec,
 		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxPages:          *maxPages,
 		MaxParallelRuns:   *maxParallelRuns,
 	})
 	if err != nil {
@@ -108,6 +110,7 @@ func runScan(args []string, stdout io.Writer) error {
 	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
 	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
 	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
+	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
 	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
 
 	if err := fs.Parse(args); err != nil {
@@ -123,6 +126,7 @@ func runScan(args []string, stdout io.Writer) error {
 		AllowedHostsCSV:   *allowedHosts,
 		RequestTimeoutSec: *requestTimeoutSec,
 		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxPages:          *maxPages,
 		MaxParallelRuns:   *maxParallelRuns,
 	})
 	if err != nil {
@@ -161,6 +165,7 @@ func runList(args []string, stdout io.Writer) error {
 	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
 	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
 	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
+	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
 	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
 
 	if err := fs.Parse(args); err != nil {
@@ -176,6 +181,7 @@ func runList(args []string, stdout io.Writer) error {
 		AllowedHostsCSV:   *allowedHosts,
 		RequestTimeoutSec: *requestTimeoutSec,
 		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxPages:          *maxPages,
 		MaxParallelRuns:   *maxParallelRuns,
 	})
 	if err != nil {
@@ -216,6 +222,7 @@ func runRun(args []string, stdout io.Writer) error {
 	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
 	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
 	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
+	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
 	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
 
 	target := ""
@@ -245,6 +252,7 @@ func runRun(args []string, stdout io.Writer) error {
 		AllowedHostsCSV:   *allowedHosts,
 		RequestTimeoutSec: *requestTimeoutSec,
 		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxPages:          *maxPages,
 		MaxParallelRuns:   *maxParallelRuns,
 	})
 	if err != nil {
