@@ -5,11 +5,12 @@
 1. `../readme.md`
 2. `scope.md`
 3. `roadmap.md`
-4. `user-guide.md`
-5. `user-scenarios.md`
-6. `test-scenarios.md`
-7. `versions/<version>/plan.md`
-8. `versions/<version>/openspec.md`
+4. `technical/index.md`
+5. `user-guide.md`
+6. `user-scenarios.md`
+7. `test-scenarios.md`
+8. `versions/<version>/plan.md`
+9. `versions/<version>/openspec.md`
 
 ## Где источник истины
 
@@ -18,6 +19,7 @@
 - Пользовательские сценарии: `user-scenarios.md`
 - Сценарии тестирования: `test-scenarios.md`
 - Руководство пользователя: `user-guide.md`
+- Техническая архитектура и инженерные контракты: `technical/*`
 - Ключевые решения: `decisions.md`
 - Накопительные уроки: `lessons-learned.md`
 - OpenSpec-рабочая зона: `../openspec/changes/`
@@ -27,5 +29,6 @@
 
 - `versions/<version>/plan.md` ссылается на релевантные сценарии.
 - `versions/<version>/action-log.md` хранит изменения, ошибки и реакции версии.
+- `technical/index.md` ссылается на обязательные технические документы реализации.
 - После закрытия версии выводы переносятся в `lessons-learned.md`.
 - Feature-пакеты OpenSpec создаются только после согласования workflow разработки.
