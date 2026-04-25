@@ -94,9 +94,16 @@
 
 ## Статус параметров в текущей реализации v1
 
-- Уже применяются в runtime: `raw_path`, `output_path`, `api.base_url`, `api.partner_id`, `security.allowed_hosts`, `limits.max_file_size_mb`, `limits.max_pages`, `limits.request_timeout_sec`, `limits.max_parallel_runs`.
+- Уже применяются в runtime: `raw_path`, `output_path`, `api.base_url`, `api.partner_id`, `security.allowed_hosts`, `limits.max_file_size_mb`, `limits.max_pages`, `limits.request_timeout_sec`, `limits.max_parallel_runs`, `audit.retention_days`, `audit.hmac_key_id`.
 - В `run` дополнительно применяются проверки path hardening для Windows (`ADS` и reparse-point deny).
-- Параметры целевого конфигурационного контракта, которые должны быть синхронизированы с runtime отдельными задачами: `security.require_tls_verify`, `audit.*`, `catalog.db_path`, `logging.*`, `api.tags*`.
+- Параметры целевого конфигурационного контракта, которые должны быть синхронизированы с runtime отдельными задачами: `security.require_tls_verify`, `catalog.db_path`, `logging.*`, `api.tags*`.
+
+## Аудит [v1]
+
+- журнал хранится в `<workspace>/.anonym/audit.log` (формат JSONL);
+- `file_id` в журнале хранится только в виде HMAC-идентификатора;
+- raw-путь, исходное имя файла и секреты в журнал не записываются;
+- при каждой новой записи применяется retention по `audit.retention_days`.
 
 ## Варианты запуска [v1+v2]
 

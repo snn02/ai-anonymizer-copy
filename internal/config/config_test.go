@@ -11,16 +11,20 @@ func TestLoadUsesFlagsOverEnv(t *testing.T) {
 	t.Setenv("ANON_MAX_PARALLEL_RUNS", "9")
 	t.Setenv("ANON_MAX_FILE_SIZE_MB", "50")
 	t.Setenv("ANON_MAX_PAGES", "999")
+	t.Setenv("ANON_AUDIT_RETENTION_DAYS", "60")
+	t.Setenv("ANON_AUDIT_HMAC_KEY_ID", "env-audit-key")
 
 	cfg, err := Load(LoadOptions{
-		RawPath:         "D:/flag-raw",
-		OutputPath:      "C:/flag/output",
-		WorkspacePath:   "C:/flag/workspace",
-		APIBaseURL:      "https://flag.company.local",
-		AllowedHostsCSV: "flag.company.local",
-		MaxFileSizeMB:   25,
-		MaxPages:        300,
-		MaxParallelRuns: 1,
+		RawPath:            "D:/flag-raw",
+		OutputPath:         "C:/flag/output",
+		WorkspacePath:      "C:/flag/workspace",
+		APIBaseURL:         "https://flag.company.local",
+		AllowedHostsCSV:    "flag.company.local",
+		MaxFileSizeMB:      25,
+		MaxPages:           300,
+		MaxParallelRuns:    1,
+		AuditRetentionDays: 30,
+		AuditHMACKeyID:     "flag-audit-key",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -43,6 +47,12 @@ func TestLoadUsesFlagsOverEnv(t *testing.T) {
 	}
 	if cfg.MaxPages != 300 {
 		t.Fatalf("expected flag max_pages=300, got %d", cfg.MaxPages)
+	}
+	if cfg.AuditRetentionDays != 30 {
+		t.Fatalf("expected flag audit_retention_days=30, got %d", cfg.AuditRetentionDays)
+	}
+	if cfg.AuditHMACKeyID != "flag-audit-key" {
+		t.Fatalf("expected flag audit_hmac_key_id, got %q", cfg.AuditHMACKeyID)
 	}
 }
 

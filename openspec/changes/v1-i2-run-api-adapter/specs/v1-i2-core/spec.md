@@ -81,3 +81,20 @@ Runtime MUST применять сетевые и ресурсные огран�
 - Given runtime сконфигурирован без корректных security-параметров
 - When пользователь запускает `anonym run`
 - Then команда завершается ошибкой и не использует `allow-all` fallback в production-пути
+
+### Requirement: run пишет безопасный audit trail с HMAC file-id и retention
+
+Runtime MUST фиксировать результат `run` в audit-журнале без PII/секретов, MUST записывать `file-id` только как HMAC-идентификатор и MUST применять retention по `audit.retention_days`.
+
+#### Scenario: успешный run формирует безопасную audit-запись
+
+- Given `anonym run <id>` завершился успешно
+- When runtime записывает audit-событие
+- Then журнал содержит только безопасные поля (`ts`, `event`, `status`, `file_id`, `error?`)
+- And `file_id` записан как HMAC, без raw id/path
+
+#### Scenario: retention удаляет устаревшие записи
+
+- Given в audit-журнале есть записи старше окна retention
+- When добавляется новая запись `run`
+- Then записи старше `audit.retention_days` удаляются, актуальные записи сохраняются

@@ -43,6 +43,12 @@ func ValidateRuntime(cfg config.Config) error {
 	if cfg.MaxPages <= 0 {
 		return fmt.Errorf("preflight: max_pages must be positive, got %d", cfg.MaxPages)
 	}
+	if cfg.AuditRetentionDays <= 0 {
+		return fmt.Errorf("preflight: audit.retention_days must be positive, got %d", cfg.AuditRetentionDays)
+	}
+	if strings.TrimSpace(cfg.AuditHMACKeyID) == "" {
+		return errors.New("preflight: audit.hmac_key_id is required")
+	}
 	return nil
 }
 

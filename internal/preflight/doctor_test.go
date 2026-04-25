@@ -35,15 +35,17 @@ func buildDoctorConfig(t *testing.T, baseURL string) config.Config {
 	}
 
 	return config.Config{
-		RawPath:           raw,
-		OutputPath:        output,
-		WorkspacePath:     workspace,
-		APIBaseURL:        baseURL,
-		APIAllowedHosts:   []string{"127.0.0.1", "localhost"},
-		MaxPages:          300,
-		MaxParallelRuns:   1,
-		APIPartnerID:      "partner-1",
-		RequestTimeoutSec: 3,
+		RawPath:            raw,
+		OutputPath:         output,
+		WorkspacePath:      workspace,
+		APIBaseURL:         baseURL,
+		APIAllowedHosts:    []string{"127.0.0.1", "localhost"},
+		MaxPages:           300,
+		MaxParallelRuns:    1,
+		APIPartnerID:       "partner-1",
+		RequestTimeoutSec:  3,
+		AuditRetentionDays: 30,
+		AuditHMACKeyID:     "audit-hmac-v1",
 	}
 }
 

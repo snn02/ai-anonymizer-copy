@@ -176,3 +176,15 @@
 - Тип: изменение
 - Описание: скорректирована пользовательская документация `v1`: удалены неподдерживаемые CLI override-флаги `run` (`--fields/--tags/--tags-numeration`) и добавлен блок известных ограничений/рисков по текущему page-counter для PDF и DOCX.
 - Ссылка: `../../user-guide.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: по TDD закрыт `T7` для `v1-i2`: добавлен runtime audit trail (`internal/audit`) с безопасным payload, HMAC `file_id`, retention по `audit.retention_days`; интегрировано в `anonym run` с обязательным чтением audit-ключа из OS secret store (`audit.hmac_key_id`) без plaintext fallback.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: подтверждено `p0`-покрытие `T7` (безопасные поля журнала, HMAC file-id, retention, совместимость adapter) и зеленый прогон `go test ./...` после синхронизации OpenSpec и документации.
+- Ссылка: `../../test-scenarios.md`

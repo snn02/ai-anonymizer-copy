@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"ai-anonymizer/internal/audit"
 	"ai-anonymizer/internal/catalog"
 	"ai-anonymizer/internal/config"
 	"ai-anonymizer/internal/preflight"
@@ -68,6 +69,13 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	if strings.TrimSpace(secret) == "" {
 		return Result{}, errors.New("run: api secret was not found in OS secret store")
 	}
+	auditSecret, err := deps.SecretGetter.GetSecret(cfg.AuditHMACKeyID)
+	if err != nil {
+		return Result{}, fmt.Errorf("run: audit key read failed: %w", err)
+	}
+	if strings.TrimSpace(auditSecret) == "" {
+		return Result{}, errors.New("run: audit hmac key was not found in OS secret store")
+	}
 
 	c := catalog.FileCatalog{Path: cfg.CatalogPath}
 	items, err := c.Load()
@@ -79,9 +87,15 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
+	recorder := audit.Recorder{
+		Path:          cfg.AuditPath,
+		RetentionDays: cfg.AuditRetentionDays,
+		HMACKey:       auditSecret,
+	}
 
 	absPath := filepath.Join(cfg.RawPath, filepath.FromSlash(selected.Path))
 	if err := validateRunFile(cfg.RawPath, absPath, cfg.MaxFileSizeMB, cfg.MaxPages); err != nil {
+		_ = recorder.Record("run", string(catalog.StatusFailed), selected.ID, "validation_failed")
 		return Result{}, err
 	}
 
@@ -94,6 +108,7 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	if err != nil {
 		items[idx].Status = catalog.StatusFailed
 		_ = c.Save(items)
+		_ = recorder.Record("run", string(catalog.StatusFailed), selected.ID, "api_request_failed")
 		return Result{}, err
 	}
 
@@ -101,11 +116,16 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	if err != nil {
 		items[idx].Status = catalog.StatusFailed
 		_ = c.Save(items)
+		_ = recorder.Record("run", string(catalog.StatusFailed), selected.ID, "output_write_failed")
 		return Result{}, err
 	}
 
 	items[idx].Status = catalog.StatusSucceeded
 	if err := c.Save(items); err != nil {
+		_ = recorder.Record("run", string(catalog.StatusFailed), selected.ID, "catalog_update_failed")
+		return Result{}, err
+	}
+	if err := recorder.Record("run", string(catalog.StatusSucceeded), selected.ID, ""); err != nil {
 		return Result{}, err
 	}
 	return Result{

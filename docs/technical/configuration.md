@@ -49,6 +49,8 @@
 4. `security.allowed_hosts` не может быть пустым в production-профиле.
 5. `limits.max_parallel_runs` в `v1` фиксируется в `1`.
 6. Секреты для API (например, `Authorization` ключ) читаются только из keyring по `partner_id`/профилю.
+7. Ключ для audit HMAC читается только из OS secret store по `audit.hmac_key_id`; plaintext fallback запрещен.
+8. Audit-журнал хранится в `<workspace>/.anonym/audit.log` и применяет retention по `audit.retention_days`.
 
 ## Формат переменных окружения
 

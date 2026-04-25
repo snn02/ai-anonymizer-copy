@@ -9,45 +9,52 @@ import (
 )
 
 type Config struct {
-	RawPath           string
-	OutputPath        string
-	WorkspacePath     string
-	CatalogPath       string
-	APIBaseURL        string
-	APIPartnerID      string
-	APIAllowedHosts   []string
-	RequestTimeoutSec int
-	MaxFileSizeMB     int
-	MaxPages          int
-	MaxParallelRuns   int
+	RawPath            string
+	OutputPath         string
+	WorkspacePath      string
+	CatalogPath        string
+	AuditPath          string
+	APIBaseURL         string
+	APIPartnerID       string
+	APIAllowedHosts    []string
+	RequestTimeoutSec  int
+	MaxFileSizeMB      int
+	MaxPages           int
+	MaxParallelRuns    int
+	AuditRetentionDays int
+	AuditHMACKeyID     string
 }
 
 type LoadOptions struct {
-	ConfigPath        string
-	RawPath           string
-	OutputPath        string
-	WorkspacePath     string
-	APIBaseURL        string
-	APIPartnerID      string
-	AllowedHostsCSV   string
-	RequestTimeoutSec int
-	MaxFileSizeMB     int
-	MaxPages          int
-	MaxParallelRuns   int
+	ConfigPath         string
+	RawPath            string
+	OutputPath         string
+	WorkspacePath      string
+	APIBaseURL         string
+	APIPartnerID       string
+	AllowedHostsCSV    string
+	RequestTimeoutSec  int
+	MaxFileSizeMB      int
+	MaxPages           int
+	MaxParallelRuns    int
+	AuditRetentionDays int
+	AuditHMACKeyID     string
 }
 
 func Load(opts LoadOptions) (Config, error) {
 	cfg := Config{
-		RawPath:           firstNonEmpty(opts.RawPath, os.Getenv("ANON_RAW_PATH")),
-		OutputPath:        firstNonEmpty(opts.OutputPath, os.Getenv("ANON_OUTPUT_PATH")),
-		WorkspacePath:     firstNonEmpty(opts.WorkspacePath, os.Getenv("ANON_WORKSPACE_PATH")),
-		APIBaseURL:        firstNonEmpty(opts.APIBaseURL, os.Getenv("ANON_API_BASE_URL")),
-		APIPartnerID:      firstNonEmpty(opts.APIPartnerID, os.Getenv("ANON_API_PARTNER_ID")),
-		APIAllowedHosts:   splitCSV(firstNonEmpty(opts.AllowedHostsCSV, os.Getenv("ANON_ALLOWED_HOSTS"))),
-		RequestTimeoutSec: resolveRequestTimeoutSec(opts.RequestTimeoutSec),
-		MaxFileSizeMB:     resolveMaxFileSizeMB(opts.MaxFileSizeMB),
-		MaxPages:          resolveMaxPages(opts.MaxPages),
-		MaxParallelRuns:   1,
+		RawPath:            firstNonEmpty(opts.RawPath, os.Getenv("ANON_RAW_PATH")),
+		OutputPath:         firstNonEmpty(opts.OutputPath, os.Getenv("ANON_OUTPUT_PATH")),
+		WorkspacePath:      firstNonEmpty(opts.WorkspacePath, os.Getenv("ANON_WORKSPACE_PATH")),
+		APIBaseURL:         firstNonEmpty(opts.APIBaseURL, os.Getenv("ANON_API_BASE_URL")),
+		APIPartnerID:       firstNonEmpty(opts.APIPartnerID, os.Getenv("ANON_API_PARTNER_ID")),
+		APIAllowedHosts:    splitCSV(firstNonEmpty(opts.AllowedHostsCSV, os.Getenv("ANON_ALLOWED_HOSTS"))),
+		RequestTimeoutSec:  resolveRequestTimeoutSec(opts.RequestTimeoutSec),
+		MaxFileSizeMB:      resolveMaxFileSizeMB(opts.MaxFileSizeMB),
+		MaxPages:           resolveMaxPages(opts.MaxPages),
+		MaxParallelRuns:    1,
+		AuditRetentionDays: resolveAuditRetentionDays(opts.AuditRetentionDays),
+		AuditHMACKeyID:     firstNonEmpty(opts.AuditHMACKeyID, os.Getenv("ANON_AUDIT_HMAC_KEY_ID"), "audit-hmac-v1"),
 	}
 
 	cfg.MaxParallelRuns = resolveParallelRuns(opts.MaxParallelRuns)
@@ -72,6 +79,7 @@ func Load(opts LoadOptions) (Config, error) {
 	cfg.OutputPath = filepath.Clean(cfg.OutputPath)
 	cfg.WorkspacePath = filepath.Clean(cfg.WorkspacePath)
 	cfg.CatalogPath = filepath.Join(cfg.WorkspacePath, ".anonym", "catalog.json")
+	cfg.AuditPath = filepath.Join(cfg.WorkspacePath, ".anonym", "audit.log")
 
 	return cfg, nil
 }
@@ -132,6 +140,21 @@ func resolveMaxPages(flagValue int) int {
 	n, err := strconv.Atoi(envValue)
 	if err != nil || n <= 0 {
 		return 300
+	}
+	return n
+}
+
+func resolveAuditRetentionDays(flagValue int) int {
+	if flagValue > 0 {
+		return flagValue
+	}
+	envValue := strings.TrimSpace(os.Getenv("ANON_AUDIT_RETENTION_DAYS"))
+	if envValue == "" {
+		return 30
+	}
+	n, err := strconv.Atoi(envValue)
+	if err != nil || n <= 0 {
+		return 30
 	}
 	return n
 }

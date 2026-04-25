@@ -23,13 +23,15 @@ func buildSafeRuntimeConfig(t *testing.T) config.Config {
 	}
 
 	return config.Config{
-		RawPath:         raw,
-		OutputPath:      output,
-		WorkspacePath:   workspace,
-		APIBaseURL:      "https://api.company.local",
-		APIAllowedHosts: []string{"api.company.local"},
-		MaxPages:        300,
-		MaxParallelRuns: 1,
+		RawPath:            raw,
+		OutputPath:         output,
+		WorkspacePath:      workspace,
+		APIBaseURL:         "https://api.company.local",
+		APIAllowedHosts:    []string{"api.company.local"},
+		MaxPages:           300,
+		MaxParallelRuns:    1,
+		AuditRetentionDays: 30,
+		AuditHMACKeyID:     "audit-hmac-v1",
 	}
 }
 
@@ -127,5 +129,25 @@ func TestValidateFailsWhenMaxPagesIsNotPositive(t *testing.T) {
 	err := Validate(cfg)
 	if err == nil {
 		t.Fatal("expected error for max_pages <= 0")
+	}
+}
+
+func TestValidateFailsWhenAuditRetentionIsNotPositive(t *testing.T) {
+	cfg := buildSafeRuntimeConfig(t)
+	cfg.AuditRetentionDays = 0
+
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for audit.retention_days <= 0")
+	}
+}
+
+func TestValidateFailsWhenAuditHMACKeyIDIsEmpty(t *testing.T) {
+	cfg := buildSafeRuntimeConfig(t)
+	cfg.AuditHMACKeyID = " "
+
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for empty audit.hmac_key_id")
 	}
 }

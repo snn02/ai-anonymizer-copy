@@ -3,7 +3,10 @@ package anonymizer
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,11 +23,23 @@ type fakeSecretGetter struct {
 	err   error
 }
 
+type mapSecretGetter struct {
+	values map[string]string
+	err    error
+}
+
 func (f fakeSecretGetter) GetSecret(partnerID string) (string, error) {
 	if f.err != nil {
 		return "", f.err
 	}
 	return f.value, nil
+}
+
+func (m mapSecretGetter) GetSecret(partnerID string) (string, error) {
+	if m.err != nil {
+		return "", m.err
+	}
+	return m.values[partnerID], nil
 }
 
 func TestResolveByID(t *testing.T) {
@@ -111,6 +126,22 @@ func TestExecuteRejectsMissingSecretFallback(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "was not found in OS secret store") {
 		t.Fatalf("expected missing secret error, got %v", err)
+	}
+}
+
+func TestExecuteRejectsMissingAuditHMACKey(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.AuditHMACKeyID = "audit-hmac-v1"
+
+	_, err := Execute(cfg, "x", Deps{
+		SecretGetter: mapSecretGetter{
+			values: map[string]string{
+				cfg.APIPartnerID: "api-secret",
+			},
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "audit hmac key was not found in OS secret store") {
+		t.Fatalf("expected missing audit hmac key error, got %v", err)
 	}
 }
 
@@ -282,6 +313,78 @@ func TestExecuteRejectsWindowsReparsePointInPath(t *testing.T) {
 	}
 }
 
+func TestExecuteWritesAuditEntryWithHMACSafeFields(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.AuditRetentionDays = 30
+	cfg.AuditHMACKeyID = "audit-hmac-v1"
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("PII"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	serverURL, serverClient, cleanup := newSuccessAPIClient([]byte(`{"result":"ANON"}`), "application/json")
+	defer cleanup()
+	cfg.APIBaseURL = serverURL
+	cfg.APIAllowedHosts = []string{"127.0.0.1", "localhost"}
+
+	result, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		HTTPClient: serverClient,
+		SecretGetter: mapSecretGetter{
+			values: map[string]string{
+				cfg.APIPartnerID:   "api-secret",
+				cfg.AuditHMACKeyID: "audit-secret",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if result.Item.Status != catalog.StatusSucceeded {
+		t.Fatalf("expected succeeded status, got %q", result.Item.Status)
+	}
+
+	data, err := os.ReadFile(cfg.AuditPath)
+	if err != nil {
+		t.Fatalf("read audit log failed: %v", err)
+	}
+	line := strings.TrimSpace(string(data))
+	if line == "" {
+		t.Fatal("expected non-empty audit line")
+	}
+	if strings.Contains(line, rel) || strings.Contains(line, filePath) || strings.Contains(strings.ToLower(line), "sample.txt") {
+		t.Fatalf("audit line must not contain raw path/name, got %q", line)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(line), &payload); err != nil {
+		t.Fatalf("invalid audit json: %v", err)
+	}
+	if payload["event"] != "run" {
+		t.Fatalf("expected event=run, got %#v", payload["event"])
+	}
+	if payload["status"] != string(catalog.StatusSucceeded) {
+		t.Fatalf("expected status=succeeded, got %#v", payload["status"])
+	}
+	fileID, _ := payload["file_id"].(string)
+	if fileID == "" {
+		t.Fatal("expected non-empty file_id")
+	}
+	if fileID == catalog.BuildID(rel) {
+		t.Fatalf("expected HMAC file_id, got raw id %q", fileID)
+	}
+}
+
 func baseConfig(t *testing.T) config.Config {
 	t.Helper()
 
@@ -296,18 +399,34 @@ func baseConfig(t *testing.T) config.Config {
 	}
 
 	return config.Config{
-		RawPath:           raw,
-		OutputPath:        output,
-		WorkspacePath:     workspace,
-		CatalogPath:       filepath.Join(workspace, ".anonym", "catalog.json"),
-		APIBaseURL:        "https://api.company.local",
-		APIPartnerID:      "partner-1",
-		APIAllowedHosts:   []string{"api.company.local"},
-		RequestTimeoutSec: 5,
-		MaxFileSizeMB:     25,
-		MaxPages:          300,
-		MaxParallelRuns:   1,
+		RawPath:            raw,
+		OutputPath:         output,
+		WorkspacePath:      workspace,
+		CatalogPath:        filepath.Join(workspace, ".anonym", "catalog.json"),
+		AuditPath:          filepath.Join(workspace, ".anonym", "audit.log"),
+		APIBaseURL:         "https://api.company.local",
+		APIPartnerID:       "partner-1",
+		APIAllowedHosts:    []string{"api.company.local"},
+		RequestTimeoutSec:  5,
+		MaxFileSizeMB:      25,
+		MaxPages:           300,
+		MaxParallelRuns:    1,
+		AuditRetentionDays: 30,
+		AuditHMACKeyID:     "audit-hmac-v1",
 	}
+}
+
+func newSuccessAPIClient(responseBody []byte, contentType string) (string, *http.Client, func()) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/tasks/file_anonymization" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", contentType)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(responseBody)
+	}))
+	return server.URL, server.Client(), server.Close
 }
 
 func buildFakePDFWithPages(pages int) []byte {
