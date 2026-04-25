@@ -11,7 +11,10 @@ import (
 )
 
 const (
-	StatusScanned = "scanned"
+	StatusScanned   = "scanned"
+	StatusSent      = "sent"
+	StatusSucceeded = "succeeded"
+	StatusFailed    = "failed"
 )
 
 type Item struct {

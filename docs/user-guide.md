@@ -24,8 +24,11 @@
 
 - `anonym scan`
 - `anonym list`
-- `anonym run <id|path> [--fields <value>] [--tags <csv>] [--tags-numeration 0|1]`
+- `anonym run <id|path>`
 - `anonym doctor`
+
+Примечание:
+- в `v1` команда `run` не поддерживает CLI override-флаги `--fields`, `--tags`, `--tags-numeration`; используются значения из конфигурации/окружения.
 
 ### `anonym doctor` (старт `v1-i1`)
 
@@ -64,6 +67,37 @@
 - Секреты читаются только из OS secret store.
 - При конфликте источников приоритет: flags > env > config file.
 
+## Параметры приложения [v1]
+
+Ниже — полный каталог параметров из конфигурационного контракта.
+
+| Параметр | Назначение | Где задается | Кто меняет |
+|---|---|---|---|
+| `paths.raw_path` | путь к исходным файлам вне workspace | `--raw-path`, `ANON_RAW_PATH`, `config.yaml` | пользователь/администратор рабочего места |
+| `paths.output_path` | путь для анонимизированных файлов в workspace | `--output-path`, `ANON_OUTPUT_PATH`, `config.yaml` | пользователь/администратор рабочего места |
+| `api.base_url` | базовый URL API анонимизации | `--api-base-url`, `ANON_API_BASE_URL`, `config.yaml` | администратор/техлид |
+| `api.partner_id` | идентификатор партнера для вызовов API | `--api-partner-id`, `ANON_API_PARTNER_ID`, `config.yaml` | администратор/техлид |
+| `api.fields` | профиль/поля анонимизации | `ANON_API_FIELDS`, `config.yaml` | администратор/техлид |
+| `api.tags` | дополнительные теги запроса | `ANON_API_TAGS`, `config.yaml` | администратор/техлид |
+| `api.tags_numeration` | режим нумерации тегов (`0/1`) | `ANON_API_TAGS_NUMERATION`, `config.yaml` | администратор/техлид |
+| `limits.max_file_size_mb` | лимит размера входного файла | `--max-file-size-mb`, `ANON_MAX_FILE_SIZE_MB`, `config.yaml` | администратор/техлид |
+| `limits.max_pages` | лимит страниц для поддерживаемых форматов | `ANON_MAX_PAGES`, `config.yaml` | администратор/техлид |
+| `limits.request_timeout_sec` | timeout API-запроса | `--request-timeout-sec`, `ANON_REQUEST_TIMEOUT_SEC`, `config.yaml` | администратор/техлид |
+| `limits.max_parallel_runs` | лимит параллельных запусков (для `v1` = `1`) | `--max-parallel-runs`, `ANON_MAX_PARALLEL_RUNS`, `config.yaml` | администратор/техлид |
+| `security.allowed_hosts` | allowlist допустимых API host | `--allowed-hosts`, `ANON_ALLOWED_HOSTS`, `config.yaml` | администратор/техлид |
+| `security.require_tls_verify` | обязательная проверка TLS-сертификата | `ANON_REQUIRE_TLS_VERIFY`, `config.yaml` | администратор/техлид |
+| `audit.retention_days` | срок хранения аудита | `ANON_AUDIT_RETENTION_DAYS`, `config.yaml` | администратор/техлид |
+| `audit.hmac_key_id` | ключ HMAC для `file-id` в аудит-логах | `ANON_AUDIT_HMAC_KEY_ID`, `config.yaml` | администратор/техлид |
+| `catalog.db_path` | путь хранения локального каталога | `ANON_CATALOG_DB_PATH`, `config.yaml` | администратор/техлид |
+| `logging.level` | уровень логирования | `ANON_LOG_LEVEL`, `config.yaml` | администратор/техлид |
+| `logging.format` | формат логов | `ANON_LOG_FORMAT`, `config.yaml` | администратор/техлид |
+
+## Статус параметров в текущей реализации v1
+
+- Уже применяются в runtime: `raw_path`, `output_path`, `api.base_url`, `api.partner_id`, `security.allowed_hosts`, `limits.max_file_size_mb`, `limits.max_pages`, `limits.request_timeout_sec`, `limits.max_parallel_runs`.
+- В `run` дополнительно применяются проверки path hardening для Windows (`ADS` и reparse-point deny).
+- Параметры целевого конфигурационного контракта, которые должны быть синхронизированы с runtime отдельными задачами: `security.require_tls_verify`, `audit.*`, `catalog.db_path`, `logging.*`, `api.tags*`.
+
 ## Варианты запуска [v1+v2]
 
 - По `id` из списка.
@@ -81,3 +115,8 @@
 
 - MCP-обертка над тем же trusted-core CLI.
 - Операционные регламенты секретов и эксплуатации.
+
+## Известные ограничения v1 (risks)
+
+- Текущий page-counter для PDF в `run` реализован эвристически (по структуре PDF), поэтому для отдельных сложных PDF возможна неточная оценка числа страниц.
+- Для `DOCX` первичный источник количества страниц — `docProps/app.xml`; при отсутствии метаданных используется fallback по page-break в `word/document.xml`.

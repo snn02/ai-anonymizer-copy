@@ -40,6 +40,7 @@ func buildDoctorConfig(t *testing.T, baseURL string) config.Config {
 		WorkspacePath:     workspace,
 		APIBaseURL:        baseURL,
 		APIAllowedHosts:   []string{"127.0.0.1", "localhost"},
+		MaxPages:          300,
 		MaxParallelRuns:   1,
 		APIPartnerID:      "partner-1",
 		RequestTimeoutSec: 3,

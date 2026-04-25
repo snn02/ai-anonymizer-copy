@@ -134,3 +134,45 @@
 - Тип: изменение
 - Описание: обновлен OpenSpec-пакет итерации `v1-i2-run-api-adapter`: зафиксированы `proposal`, декомпозиция `tasks` с трассировкой `requirement -> task -> test -> runtime evidence`, security DoD и `spec` с проверяемыми сценариями `run/api-adapter/status/security`.
 - Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/proposal.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: начата и реализована итерация `v1-i2` по TDD: добавлены команда `anonym run`, сервисный слой `internal/anonymizer` (resolver `id|path|fuzzy`, API client/adapter, переходы статусов `sent/succeeded/failed`, PII-safe output naming), а также чтение секрета через OS secret store без production fallback.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: подтверждено покрытие ключевых проверок `v1-i2` (явный запуск run, ambiguous fuzzy policy, API adapter, статусы каталога, security guardrails `https/allowlist/limits/no-fallback`) и зеленый прогон `go test ./...`.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/specs/v1-i2-core/spec.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: в пользовательской документации добавлен полный каталог параметров приложения с источниками (`flags/env/config`) и зонами ответственности по изменению лимитов/безопасности; отдельно зафиксирован статус параметров, уже применяемых в runtime `v1`.
+- Ссылка: `../../user-guide.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: по `v1-i2` закрыты незавершенные security/reliability пункты: в runtime `run` добавлены `max_pages` (для поддерживаемых форматов) и усиленный Windows path hardening (запрет ADS и reparse points); добавлены/обновлены unit и integration проверки.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: подтвержден зеленый прогон `go test ./...` после внедрения `max_pages` и Windows hardening в `run`; OpenSpec `v1-i2` синхронизирован с фактическим runtime evidence.
+- Ссылка: `../../../openspec/changes/v1-i2-run-api-adapter/tasks.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: устранены замечания техлид-ревью по `v1-i2`: `max_pages` в `run` расширен на целевые форматы PDF и DOCX (добавлены тесты), а в технической документации синхронизировано имя env-переменной `api.partner_id` с фактическим кодом (`ANON_API_PARTNER_ID`).
+- Ссылка: `../../technical/configuration.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: скорректирована пользовательская документация `v1`: удалены неподдерживаемые CLI override-флаги `run` (`--fields/--tags/--tags-numeration`) и добавлен блок известных ограничений/рисков по текущему page-counter для PDF и DOCX.
+- Ссылка: `../../user-guide.md`

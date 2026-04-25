@@ -10,6 +10,7 @@ func TestLoadUsesFlagsOverEnv(t *testing.T) {
 	t.Setenv("ANON_ALLOWED_HOSTS", "env.company.local")
 	t.Setenv("ANON_MAX_PARALLEL_RUNS", "9")
 	t.Setenv("ANON_MAX_FILE_SIZE_MB", "50")
+	t.Setenv("ANON_MAX_PAGES", "999")
 
 	cfg, err := Load(LoadOptions{
 		RawPath:         "D:/flag-raw",
@@ -18,6 +19,7 @@ func TestLoadUsesFlagsOverEnv(t *testing.T) {
 		APIBaseURL:      "https://flag.company.local",
 		AllowedHostsCSV: "flag.company.local",
 		MaxFileSizeMB:   25,
+		MaxPages:        300,
 		MaxParallelRuns: 1,
 	})
 	if err != nil {
@@ -38,6 +40,9 @@ func TestLoadUsesFlagsOverEnv(t *testing.T) {
 	}
 	if cfg.MaxFileSizeMB != 25 {
 		t.Fatalf("expected flag max_file_size_mb=25, got %d", cfg.MaxFileSizeMB)
+	}
+	if cfg.MaxPages != 300 {
+		t.Fatalf("expected flag max_pages=300, got %d", cfg.MaxPages)
 	}
 }
 

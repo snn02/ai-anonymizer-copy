@@ -40,6 +40,9 @@ func ValidateRuntime(cfg config.Config) error {
 	if cfg.MaxParallelRuns != 1 {
 		return fmt.Errorf("preflight: max_parallel_runs must be 1 in v1, got %d", cfg.MaxParallelRuns)
 	}
+	if cfg.MaxPages <= 0 {
+		return fmt.Errorf("preflight: max_pages must be positive, got %d", cfg.MaxPages)
+	}
 	return nil
 }
 

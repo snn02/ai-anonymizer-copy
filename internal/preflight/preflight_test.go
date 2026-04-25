@@ -28,6 +28,7 @@ func buildSafeRuntimeConfig(t *testing.T) config.Config {
 		WorkspacePath:   workspace,
 		APIBaseURL:      "https://api.company.local",
 		APIAllowedHosts: []string{"api.company.local"},
+		MaxPages:        300,
 		MaxParallelRuns: 1,
 	}
 }
@@ -116,5 +117,15 @@ func TestValidateFailsWhenMaxParallelRunsNotOne(t *testing.T) {
 	err := Validate(cfg)
 	if err == nil {
 		t.Fatal("expected error for max_parallel_runs != 1")
+	}
+}
+
+func TestValidateFailsWhenMaxPagesIsNotPositive(t *testing.T) {
+	cfg := buildSafeRuntimeConfig(t)
+	cfg.MaxPages = 0
+
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for max_pages <= 0")
 	}
 }
