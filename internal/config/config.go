@@ -9,33 +9,42 @@ import (
 )
 
 type Config struct {
-	RawPath         string
-	OutputPath      string
-	WorkspacePath   string
-	CatalogPath     string
-	APIBaseURL      string
-	APIAllowedHosts []string
-	MaxParallelRuns int
+	RawPath           string
+	OutputPath        string
+	WorkspacePath     string
+	CatalogPath       string
+	APIBaseURL        string
+	APIPartnerID      string
+	APIAllowedHosts   []string
+	RequestTimeoutSec int
+	MaxFileSizeMB     int
+	MaxParallelRuns   int
 }
 
 type LoadOptions struct {
-	ConfigPath      string
-	RawPath         string
-	OutputPath      string
-	WorkspacePath   string
-	APIBaseURL      string
-	AllowedHostsCSV string
-	MaxParallelRuns int
+	ConfigPath        string
+	RawPath           string
+	OutputPath        string
+	WorkspacePath     string
+	APIBaseURL        string
+	APIPartnerID      string
+	AllowedHostsCSV   string
+	RequestTimeoutSec int
+	MaxFileSizeMB     int
+	MaxParallelRuns   int
 }
 
 func Load(opts LoadOptions) (Config, error) {
 	cfg := Config{
-		RawPath:         firstNonEmpty(opts.RawPath, os.Getenv("ANON_RAW_PATH")),
-		OutputPath:      firstNonEmpty(opts.OutputPath, os.Getenv("ANON_OUTPUT_PATH")),
-		WorkspacePath:   firstNonEmpty(opts.WorkspacePath, os.Getenv("ANON_WORKSPACE_PATH")),
-		APIBaseURL:      firstNonEmpty(opts.APIBaseURL, os.Getenv("ANON_API_BASE_URL")),
-		APIAllowedHosts: splitCSV(firstNonEmpty(opts.AllowedHostsCSV, os.Getenv("ANON_ALLOWED_HOSTS"))),
-		MaxParallelRuns: 1,
+		RawPath:           firstNonEmpty(opts.RawPath, os.Getenv("ANON_RAW_PATH")),
+		OutputPath:        firstNonEmpty(opts.OutputPath, os.Getenv("ANON_OUTPUT_PATH")),
+		WorkspacePath:     firstNonEmpty(opts.WorkspacePath, os.Getenv("ANON_WORKSPACE_PATH")),
+		APIBaseURL:        firstNonEmpty(opts.APIBaseURL, os.Getenv("ANON_API_BASE_URL")),
+		APIPartnerID:      firstNonEmpty(opts.APIPartnerID, os.Getenv("ANON_API_PARTNER_ID")),
+		APIAllowedHosts:   splitCSV(firstNonEmpty(opts.AllowedHostsCSV, os.Getenv("ANON_ALLOWED_HOSTS"))),
+		RequestTimeoutSec: resolveRequestTimeoutSec(opts.RequestTimeoutSec),
+		MaxFileSizeMB:     resolveMaxFileSizeMB(opts.MaxFileSizeMB),
+		MaxParallelRuns:   1,
 	}
 
 	cfg.MaxParallelRuns = resolveParallelRuns(opts.MaxParallelRuns)
@@ -75,6 +84,36 @@ func resolveParallelRuns(flagValue int) int {
 	n, err := strconv.Atoi(envValue)
 	if err != nil || n <= 0 {
 		return 1
+	}
+	return n
+}
+
+func resolveRequestTimeoutSec(flagValue int) int {
+	if flagValue > 0 {
+		return flagValue
+	}
+	envValue := strings.TrimSpace(os.Getenv("ANON_REQUEST_TIMEOUT_SEC"))
+	if envValue == "" {
+		return 5
+	}
+	n, err := strconv.Atoi(envValue)
+	if err != nil || n <= 0 {
+		return 5
+	}
+	return n
+}
+
+func resolveMaxFileSizeMB(flagValue int) int {
+	if flagValue > 0 {
+		return flagValue
+	}
+	envValue := strings.TrimSpace(os.Getenv("ANON_MAX_FILE_SIZE_MB"))
+	if envValue == "" {
+		return 25
+	}
+	n, err := strconv.Atoi(envValue)
+	if err != nil || n <= 0 {
+		return 25
 	}
 	return n
 }

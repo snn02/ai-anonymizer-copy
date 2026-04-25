@@ -2,13 +2,32 @@ package main
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"ai-anonymizer/internal/preflight"
 )
 
 func TestRunDoctorSuccess(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/tasks/anonymization_fields" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	prevDeps := doctorDeps
+	doctorDeps = preflight.DoctorDeps{
+		HTTPClient:    server.Client(),
+		SecretChecker: preflight.AllowAllSecretChecker{},
+	}
+	defer func() { doctorDeps = prevDeps }()
+
 	raw := filepath.Join(t.TempDir(), "raw")
 	workspace := filepath.Join(t.TempDir(), "workspace")
 	output := filepath.Join(workspace, "anonymized")
@@ -25,8 +44,9 @@ func TestRunDoctorSuccess(t *testing.T) {
 		"--raw-path", raw,
 		"--output-path", output,
 		"--workspace-path", workspace,
-		"--api-base-url", "https://api.company.local",
-		"--allowed-hosts", "api.company.local",
+		"--api-base-url", server.URL,
+		"--api-partner-id", "partner-1",
+		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &out, &out)
 	if err != nil {
@@ -59,6 +79,7 @@ func TestRunScanAndListFlow(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", "https://api.company.local",
+		"--api-partner-id", "partner-1",
 		"--allowed-hosts", "api.company.local",
 		"--max-parallel-runs", "1",
 	}, &scanOut, &scanOut)
@@ -76,6 +97,7 @@ func TestRunScanAndListFlow(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", "https://api.company.local",
+		"--api-partner-id", "partner-1",
 		"--allowed-hosts", "api.company.local",
 		"--max-parallel-runs", "1",
 	}, &listOut, &listOut)

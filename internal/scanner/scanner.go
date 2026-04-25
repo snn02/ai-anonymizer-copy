@@ -3,6 +3,7 @@ package scanner
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -11,6 +12,14 @@ import (
 )
 
 func Discover(rawRoot string) ([]catalog.Item, error) {
+	return DiscoverWithLimits(rawRoot, Limits{})
+}
+
+type Limits struct {
+	MaxFileSizeBytes int64
+}
+
+func DiscoverWithLimits(rawRoot string, limits Limits) ([]catalog.Item, error) {
 	rootAbs, err := filepath.Abs(rawRoot)
 	if err != nil {
 		return nil, fmt.Errorf("scan: invalid raw_path: %w", err)
@@ -36,6 +45,15 @@ func Discover(rawRoot string) ([]catalog.Item, error) {
 		}
 		if hasADS(cleanPath) {
 			return nil
+		}
+		if limits.MaxFileSizeBytes > 0 {
+			info, err := os.Stat(cleanPath)
+			if err != nil {
+				return nil
+			}
+			if info.Size() > limits.MaxFileSizeBytes {
+				return nil
+			}
 		}
 
 		rel, err := filepath.Rel(rootAbs, cleanPath)

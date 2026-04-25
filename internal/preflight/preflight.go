@@ -1,17 +1,43 @@
 package preflight
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"ai-anonymizer/internal/config"
 )
 
+type SecretChecker interface {
+	HasSecret(partnerID string) (bool, error)
+}
+
+type AllowAllSecretChecker struct{}
+
+func (AllowAllSecretChecker) HasSecret(partnerID string) (bool, error) {
+	return true, nil
+}
+
+type DoctorDeps struct {
+	HTTPClient    *http.Client
+	SecretChecker SecretChecker
+}
+
 func Validate(cfg config.Config) error {
+	return ValidateRuntime(cfg)
+}
+
+func ValidateRuntime(cfg config.Config) error {
 	if err := validateBoundary(cfg.RawPath, cfg.WorkspacePath); err != nil {
+		return err
+	}
+	if err := validatePathsAccess(cfg.RawPath, cfg.OutputPath); err != nil {
 		return err
 	}
 	if err := validateAPI(cfg.APIBaseURL, cfg.APIAllowedHosts); err != nil {
@@ -20,6 +46,77 @@ func Validate(cfg config.Config) error {
 	if cfg.MaxParallelRuns != 1 {
 		return fmt.Errorf("preflight: max_parallel_runs must be 1 in v1, got %d", cfg.MaxParallelRuns)
 	}
+	return nil
+}
+
+func validatePathsAccess(rawPath, outputPath string) error {
+	rawInfo, err := os.Stat(rawPath)
+	if err != nil {
+		return fmt.Errorf("preflight: raw_path is not accessible: %w", err)
+	}
+	if !rawInfo.IsDir() {
+		return errors.New("preflight: raw_path must be a directory")
+	}
+
+	outputInfo, err := os.Stat(outputPath)
+	if err != nil {
+		return fmt.Errorf("preflight: output_path is not accessible: %w", err)
+	}
+	if !outputInfo.IsDir() {
+		return errors.New("preflight: output_path must be a directory")
+	}
+
+	probePath := filepath.Join(outputPath, ".anonym-write-probe")
+	if err := os.WriteFile(probePath, []byte("ok"), 0o600); err != nil {
+		return fmt.Errorf("preflight: output_path is not writable: %w", err)
+	}
+	_ = os.Remove(probePath)
+	return nil
+}
+
+func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
+	if err := ValidateRuntime(cfg); err != nil {
+		return err
+	}
+	if strings.TrimSpace(cfg.APIPartnerID) == "" {
+		return errors.New("preflight: api.partner_id is required for doctor")
+	}
+
+	checker := deps.SecretChecker
+	if checker == nil {
+		checker = AllowAllSecretChecker{}
+	}
+	ok, err := checker.HasSecret(cfg.APIPartnerID)
+	if err != nil {
+		return fmt.Errorf("preflight: secret store check failed: %w", err)
+	}
+	if !ok {
+		return errors.New("preflight: api secret was not found in OS secret store")
+	}
+
+	timeout := time.Duration(cfg.RequestTimeoutSec) * time.Second
+	if timeout <= 0 {
+		timeout = 5 * time.Second
+	}
+	client := deps.HTTPClient
+	if client == nil {
+		client = &http.Client{Timeout: timeout}
+	}
+
+	endpoint := strings.TrimRight(cfg.APIBaseURL, "/") + "/v1/tasks/anonymization_fields"
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("preflight: build api request: %w", err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("preflight: api availability check failed: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("preflight: api availability check returned status %d", resp.StatusCode)
+	}
+
 	return nil
 }
 

@@ -16,6 +16,11 @@ Workflow для `v1` согласован. Feature-пакеты создаютс
   - `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`
   - `../../../openspec/changes/v1-i1-foundation-preflight-discovery/specs/v1-i1-core/spec.md`
 
+## Подготовленные следующие итерации
+
+- `v1-i2-run-api-adapter`:
+  - `../../../openspec/changes/v1-i2-run-api-adapter/proposal.md`
+
 ## Правило
 
 - Одна итерация `v1` = один feature-пакет OpenSpec.

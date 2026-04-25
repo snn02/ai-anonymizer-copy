@@ -15,6 +15,8 @@ import (
 	"ai-anonymizer/internal/scanner"
 )
 
+var doctorDeps = preflight.DoctorDeps{}
+
 func main() {
 	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -48,7 +50,10 @@ func runDoctor(args []string, stdout io.Writer) error {
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
 	baseURL := fs.String("api-base-url", "", "API base URL")
+	partnerID := fs.String("api-partner-id", "", "API partner ID")
 	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
+	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
+	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
 	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
 
 	if err := fs.Parse(args); err != nil {
@@ -56,20 +61,23 @@ func runDoctor(args []string, stdout io.Writer) error {
 	}
 
 	cfg, err := config.Load(config.LoadOptions{
-		ConfigPath:      *cfgPath,
-		RawPath:         *rawPath,
-		OutputPath:      *outputPath,
-		WorkspacePath:   *workspacePath,
-		APIBaseURL:      *baseURL,
-		AllowedHostsCSV: *allowedHosts,
-		MaxParallelRuns: *maxParallelRuns,
+		ConfigPath:        *cfgPath,
+		RawPath:           *rawPath,
+		OutputPath:        *outputPath,
+		WorkspacePath:     *workspacePath,
+		APIBaseURL:        *baseURL,
+		APIPartnerID:      *partnerID,
+		AllowedHostsCSV:   *allowedHosts,
+		RequestTimeoutSec: *requestTimeoutSec,
+		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxParallelRuns:   *maxParallelRuns,
 	})
 	if err != nil {
 		return err
 	}
 
 	cfg.APIAllowedHosts = normalizeCSV(cfg.APIAllowedHosts)
-	if err := preflight.Validate(cfg); err != nil {
+	if err := preflight.ValidateDoctor(cfg, doctorDeps); err != nil {
 		return err
 	}
 
@@ -86,20 +94,26 @@ func runScan(args []string, stdout io.Writer) error {
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
 	baseURL := fs.String("api-base-url", "", "API base URL")
+	partnerID := fs.String("api-partner-id", "", "API partner ID")
 	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
+	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
+	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
 	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
 
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	cfg, err := config.Load(config.LoadOptions{
-		ConfigPath:      *cfgPath,
-		RawPath:         *rawPath,
-		OutputPath:      *outputPath,
-		WorkspacePath:   *workspacePath,
-		APIBaseURL:      *baseURL,
-		AllowedHostsCSV: *allowedHosts,
-		MaxParallelRuns: *maxParallelRuns,
+		ConfigPath:        *cfgPath,
+		RawPath:           *rawPath,
+		OutputPath:        *outputPath,
+		WorkspacePath:     *workspacePath,
+		APIBaseURL:        *baseURL,
+		APIPartnerID:      *partnerID,
+		AllowedHostsCSV:   *allowedHosts,
+		RequestTimeoutSec: *requestTimeoutSec,
+		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxParallelRuns:   *maxParallelRuns,
 	})
 	if err != nil {
 		return err
@@ -109,7 +123,10 @@ func runScan(args []string, stdout io.Writer) error {
 		return err
 	}
 
-	items, err := scanner.Discover(cfg.RawPath)
+	limitBytes := int64(cfg.MaxFileSizeMB) * 1024 * 1024
+	items, err := scanner.DiscoverWithLimits(cfg.RawPath, scanner.Limits{
+		MaxFileSizeBytes: limitBytes,
+	})
 	if err != nil {
 		return err
 	}
@@ -130,20 +147,26 @@ func runList(args []string, stdout io.Writer) error {
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
 	baseURL := fs.String("api-base-url", "", "API base URL")
+	partnerID := fs.String("api-partner-id", "", "API partner ID")
 	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
+	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
+	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
 	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
 
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	cfg, err := config.Load(config.LoadOptions{
-		ConfigPath:      *cfgPath,
-		RawPath:         *rawPath,
-		OutputPath:      *outputPath,
-		WorkspacePath:   *workspacePath,
-		APIBaseURL:      *baseURL,
-		AllowedHostsCSV: *allowedHosts,
-		MaxParallelRuns: *maxParallelRuns,
+		ConfigPath:        *cfgPath,
+		RawPath:           *rawPath,
+		OutputPath:        *outputPath,
+		WorkspacePath:     *workspacePath,
+		APIBaseURL:        *baseURL,
+		APIPartnerID:      *partnerID,
+		AllowedHostsCSV:   *allowedHosts,
+		RequestTimeoutSec: *requestTimeoutSec,
+		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxParallelRuns:   *maxParallelRuns,
 	})
 	if err != nil {
 		return err
