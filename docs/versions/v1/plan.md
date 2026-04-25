@@ -8,6 +8,7 @@
 
 - Команды CLI: `anonym scan`, `anonym list`, `anonym run`, `anonym doctor`.
 - Локальное состояние со статусами: `new/scanned/sent/succeeded/failed`.
+- Контракт конфигурации зафиксирован в `docs/technical/configuration.md` и шаблоне `config.example.yaml`.
 - Интеграция с API:
   - `POST /v1/tasks/file_anonymization`
   - `GET /v1/tasks/anonymization_file_types`
@@ -69,6 +70,7 @@
 
 - Источник требований: `../../archive/2026-04-25-ai-ide-anonymization-plan.md`
 - Источник сценариев: `../../archive/2026-04-25-ai-ide-anonymization-scenarios.md`
+- Технический контракт конфигурации: `../../technical/configuration.md`
 - Общие пользовательские сценарии: `../../user-scenarios.md`
 - Общие тестовые сценарии: `../../test-scenarios.md`
 - OpenSpec индекс версии: `openspec.md`

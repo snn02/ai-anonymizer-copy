@@ -45,3 +45,9 @@
 - Решение: выявленные риски безопасности/надежности разложены по версиям как обязательные требования.
 - Причина: зафиксировать, что обязательно закрываем в v1, а что переносим в v2.
 - Влияние: `docs/versions/v1/plan.md`, `docs/versions/v2/plan.md`, `docs/test-scenarios.md`, `docs/roadmap.md`, `docs/user-guide.md`, `docs/user-scenarios.md`.
+
+### 2026-04-25 / d-007
+
+- Решение: закрепить единый контракт конфигурации trusted CLI (`docs/technical/configuration.md`) и шаблон `config.example.yaml`; секреты хранить только в OS secret store; приоритет источников конфигурации: flags > env > file.
+- Причина: снизить риск небезопасной конфигурации и неоднозначного поведения между средами.
+- Влияние: `docs/technical/configuration.md`, `config.example.yaml`, `docs/user-guide.md`, `docs/test-scenarios.md`, `docs/versions/v1/plan.md`, `docs/versions/v1/action-log.md`.

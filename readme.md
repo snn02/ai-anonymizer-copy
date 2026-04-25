@@ -18,6 +18,9 @@
 - Карта: `docs/doc-map.md`
 - Scope: `docs/scope.md`
 - Roadmap: `docs/roadmap.md`
+- Техническая документация: `docs/technical/index.md`
+- Конфигурация trusted CLI: `docs/technical/configuration.md`
+- Шаблон локальной конфигурации: `config.example.yaml`
 - Руководство пользователя: `docs/user-guide.md`
 - Источники требований: `docs/archive/2026-04-25-ai-ide-anonymization-plan.md`, `docs/archive/2026-04-25-ai-ide-anonymization-scenarios.md`
 - OpenAPI: `docs/openapi.json`

@@ -1,0 +1,41 @@
+# Пример конфигурации anonym CLI.
+# Важно: секреты (API key) здесь не хранить. Секреты читаются только из OS secret store.
+
+profile: pilot
+
+paths:
+  # raw_path должен быть ВНЕ workspace IDE.
+  raw_path: "D:/secure-raw"
+  # output_path должен быть ВНУТРИ workspace IDE.
+  output_path: "C:/work/ai-anonymizer/anonymized"
+
+api:
+  base_url: "https://api.company.local"
+  partner_id: "00000000-0000-0000-0000-000000000000"
+  fields: "anonymizer"
+  tags: []
+  # 0 - не нумеровать теги, 1 - нумеровать.
+  tags_numeration: 1
+
+limits:
+  max_file_size_mb: 25
+  max_pages: 300
+  request_timeout_sec: 120
+  # Для v1 оставляем 1 по требованиям безопасности/устойчивости.
+  max_parallel_runs: 1
+
+security:
+  allowed_hosts:
+    - "api.company.local"
+  require_tls_verify: true
+
+audit:
+  retention_days: 30
+  hmac_key_id: "audit-hmac-v1"
+
+catalog:
+  db_path: "C:/work/ai-anonymizer/.anonym/catalog.db"
+
+logging:
+  level: "info"    # debug | info | warn | error
+  format: "json"   # json | console

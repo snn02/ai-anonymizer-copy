@@ -27,6 +27,20 @@
 - `anonym run <id|path> [--fields <value>] [--tags <csv>] [--tags-numeration 0|1]`
 - `anonym doctor`
 
+## Настройка конфигурации [v1]
+
+1. Скопировать шаблон `config.example.yaml` в локальный рабочий конфиг.
+2. Задать `raw_path` вне workspace IDE.
+3. Задать `output_path` внутри workspace IDE.
+4. Заполнить `api.base_url`, `api.partner_id`, `api.fields`.
+5. Проверить `security.allowed_hosts` и лимиты.
+6. Выполнить `anonym doctor`.
+
+Важно:
+- API-ключ не хранится в конфиг-файле и не передается в plaintext-переменных.
+- Секреты читаются только из OS secret store.
+- При конфликте источников приоритет: flags > env > config file.
+
 ## Варианты запуска [v1+v2]
 
 - По `id` из списка.

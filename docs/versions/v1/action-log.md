@@ -26,3 +26,9 @@
 - Тип: изменение
 - Описание: требования v1 уточнены по безопасности и надежности: boundary enforcement, path hardening, PII-safe naming, anti-DoS лимиты, сетевая защита, lifecycle секретов (базовый), HMAC-аудит, правила fuzzy run.
 - Ссылка: `plan.md`
+
+### 2026-04-25
+
+- Тип: изменение
+- Описание: добавлен технический контракт конфигурации (`docs/technical/configuration.md`) и шаблон `config.example.yaml`; закреплены правила источников (flags > env > file) и запрет plaintext fallback для секретов.
+- Ссылка: `../../technical/configuration.md`
