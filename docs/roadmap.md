@@ -1,35 +1,27 @@
 ﻿# roadmap
 
+## Правило
+
+`roadmap.md` хранит только статус версий и ссылки. Детали требований и шагов живут в `docs/versions/*` и `docs/versions/*/action-log.md`.
+
 ## v1
 
-- Цель: запустить безопасный sidecar CLI для анонимизации файлов.
-- Шаги:
-  - реализовать `scan/list/run/doctor`;
-  - подключить API и preflight-валидации;
-  - обеспечить проверяемую границу доступа (`raw_path`/ACL/preflight);
-  - внедрить hardening выбора файла (canonical path, anti-traversal, anti-symlink/reparse);
-  - ввести безопасные имена результирующих файлов без утечки PII;
-  - включить лимиты anti-DoS (`max_file_size`, timeout, параллельность);
-  - включить сетевую защиту (HTTPS + TLS verify + host allowlist);
-  - хранить секреты в OS secret store без plaintext fallback;
-  - добавить аудит без PII/секретов с HMAC-идентификатором;
-  - закрепить адаптер результата `file_anonymization` тестами.
-- Статус: in progress (итерация `v1-i1` запланирована).
+- Цель: безопасный sidecar CLI для анонимизации.
+- Статус: in progress.
+- Текущая итерация: `v1-i1`.
 - План версии: `versions/v1/plan.md`.
+- OpenSpec версии: `versions/v1/openspec.md`.
+- Лог прогресса: `versions/v1/action-log.md`.
 
 ## v2
 
-- Цель: добавить MCP-обертку поверх существующего trusted-core CLI.
-- Шаги:
-  - подключить MCP-интерфейс;
-  - сохранить security-модель v1;
-  - подключить OpenCode и Claude через MCP tool-интерфейс;
-  - добавить операционный lifecycle секретов (rotation/revocation/compromise response);
-  - расширить эксплуатационные политики сети/прокси в корпоративном контуре.
+- Цель: MCP-обертка над trusted-core CLI.
 - Статус: planned.
 - План версии: `versions/v2/plan.md`.
+- OpenSpec версии: `versions/v2/openspec.md`.
+- Лог прогресса: `versions/v2/action-log.md`.
 
-## Примечание
+## Примечание по OpenSpec
 
-- Для `v1` feature-пакеты в `../openspec/changes/` создаются по итерациям (см. `docs/versions/v1/openspec.md`).
+- Для `v1` feature-пакеты создаются по итерациям в `../openspec/changes/`.
 - Для `v2` создание feature-пакетов открывается отдельным решением.
