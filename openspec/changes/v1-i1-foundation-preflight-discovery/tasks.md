@@ -5,7 +5,7 @@
 - 2026-04-25: стартована реализация итерации, добавлен базовый каркас trusted CLI на Go (`go.mod`, `cmd/anonym`, `internal/config`, `internal/preflight`) и тесты preflight.
 - 2026-04-25: в preflight закрыт baseline (`boundary`, `https`, host allowlist, `max_parallel_runs=1`); проверки секретов и активной доступности API остаются в работе.
 - 2026-04-25: реализованы `scan/list` с локальным каталогом очереди (`.anonym/catalog.json`) и безопасным discovery; добавлены unit/integration тесты CLI и модулей `catalog/scanner`.
-- 2026-04-25: по TDD добавлены и закрыты тесты `doctor` на проверку partner secret и доступности API endpoint `/v1/tasks/anonymization_fields`; runtime-интеграция с конкретным OS secret store остается отдельной задачей.
+- 2026-04-26: по TDD завершена runtime-интеграция OS secret store для `doctor`: добавлен `internal/secrets` на базе keyring (`github.com/zalando/go-keyring`), default `allow-all` fallback удален из production-пути.
 - 2026-04-25: по TDD добавлены лимиты discovery по `max_file_size_mb` (config/env/flags) и фильтрация oversized-файлов в `scan`; подтверждено полным прогоном `go test ./...`.
 - 2026-04-25: по TDD добавлены базовые ACL-checks preflight (`raw_path`/`output_path` существуют и доступны, `output_path` writable probe), обновлены тестовые фикстуры на реальные temp-paths.
 
@@ -14,6 +14,12 @@
 - [x] Реализовать обязательные preflight-проверки конфигурации, boundary/ACL, секретов и доступности API.
 - [x] Добавить негативные кейсы для блокирующих ошибок preflight.
 - [x] Обновить пользовательскую документацию по диагностике `doctor`.
+
+DoD (security runtime):
+- [x] runtime-реализация проверки секрета подключена в production-путь `anonym doctor` через OS secret store (`internal/secrets`).
+- [x] небезопасный production fallback `allow-all` удален.
+- [x] есть негативные тесты: secret missing, secret store error, secret checker not configured.
+- [x] runtime evidence зафиксирован прогоном `go test ./...`.
 
 ## 2. scan safe discovery
 

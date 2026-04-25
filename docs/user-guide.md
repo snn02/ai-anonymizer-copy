@@ -36,7 +36,7 @@
 - `output_path` проверяется на запись через write-probe;
 - `api.base_url` использует `https`;
 - host из `api.base_url` входит в `allowed_hosts`;
-- наличие секрета для `api_partner_id` через secret-check адаптер;
+- наличие секрета для `api_partner_id` в OS secret store (service `ai-anonymizer/api`, account = `api_partner_id`);
 - доступность `GET /v1/tasks/anonymization_fields` с timeout;
 - `max_parallel_runs=1` для `v1`.
 

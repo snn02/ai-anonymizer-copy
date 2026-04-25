@@ -98,3 +98,33 @@
 - Тип: реакция
 - Описание: подтверждено состояние итерации `v1-i1`: после внедрения лимитов discovery и ACL-checks полный прогон `go test ./...` проходит успешно.
 - Ссылка: `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`
+
+### 2026-04-25
+
+- Тип: ошибка
+- Описание: выявлен разрыв между требованиями `v1` и планированием итерации `v1-i1`: в плане и proposal требование «секреты из OS secret store» присутствует, но в задачах итерации оно не было декомпозировано в проверяемую runtime-задачу (был закрыт интерфейсный слой `SecretChecker`, при этом runtime остался с `AllowAllSecretChecker` fallback).
+- Ссылка: `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`
+
+### 2026-04-25
+
+- Тип: реакция
+- Описание: зафиксирован postmortem для переноса в `lessons-learned`: причина — отсутствие трассировки «требование -> подзадача -> тест -> runtime-проверка» при декомпозиции preflight; corrective actions — 1) для security-требований вводить отдельные task-чекбоксы с явным DoD «runtime реализован, fallback запрещен, есть негативный тест», 2) перед закрытием итерации проходить release-checklist на соответствие `plan.md` по каждому security-пункту, 3) запрещать для production default-заглушки вида `allow-all` без отдельного feature-flag и явной пометки non-production.
+- Ссылка: `plan.md`
+
+### 2026-04-25
+
+- Тип: изменение
+- Описание: обновлены принципы planning workflow OpenSpec для `v1`: в `docs/versions/v1/openspec.md` добавлены обязательные quality-гейты (трассировка requirement->task->test->runtime evidence, security-DoD, запрет закрытия задач при production `allow-all` fallback, release-checklist перед закрытием итерации); эти гейты распространены на планирование `v1-i2`.
+- Ссылка: `openspec.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: доработана `v1-i1` по security-требованию OS secret store: реализован runtime `internal/secrets` (keyring), `anonym doctor` использует `OSSecretChecker` в production-пути, default fallback `AllowAllSecretChecker` удален.
+- Ссылка: `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: по актуализированным правилам OpenSpec зафиксирован DoD/evidence для security-задачи `doctor` (runtime, негативные тесты, отсутствие allow-all fallback); подтверждено прогоном `go test ./...` с зеленым статусом всех пакетов.
+- Ссылка: `../../../openspec/changes/v1-i1-foundation-preflight-discovery/tasks.md`

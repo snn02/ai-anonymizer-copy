@@ -63,3 +63,13 @@
   5. после завершения всех итераций `v1` выполняются общее тестирование, релиз и запись в `lessons-learned`.
 - Причина: перейти от подготовки документации к управляемому циклу поставки.
 - Влияние: `docs/versions/v1/plan.md`, `docs/versions/v1/openspec.md`, `docs/versions/v1/action-log.md`, `docs/test-scenarios.md`, `docs/technical/release.md`, `agents.md`, `docs/doc-map.md`.
+
+### 2026-04-25 / d-009
+
+- Решение: для планирования итераций OpenSpec в `v1` вводятся обязательные quality-гейты:
+  1. трассировка `requirement -> task -> test -> runtime evidence` для требований в scope;
+  2. отдельный DoD для security-задач (runtime, негативный тест, отсутствие небезопасного fallback);
+  3. запрет закрытия security-задач при active production fallback вида `allow-all`;
+  4. обязательная запись результата release-checklist в `docs/versions/v1/action-log.md`.
+- Причина: исключить повторение разрыва между требованиями `plan.md` и задачами OpenSpec.
+- Влияние: `docs/versions/v1/openspec.md`, `openspec/changes/v1-i2-run-api-adapter/proposal.md`, `docs/versions/v1/action-log.md`.

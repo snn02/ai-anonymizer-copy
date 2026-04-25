@@ -18,12 +18,6 @@ type SecretChecker interface {
 	HasSecret(partnerID string) (bool, error)
 }
 
-type AllowAllSecretChecker struct{}
-
-func (AllowAllSecretChecker) HasSecret(partnerID string) (bool, error) {
-	return true, nil
-}
-
 type DoctorDeps struct {
 	HTTPClient    *http.Client
 	SecretChecker SecretChecker
@@ -84,7 +78,7 @@ func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
 
 	checker := deps.SecretChecker
 	if checker == nil {
-		checker = AllowAllSecretChecker{}
+		return errors.New("preflight: secret checker is not configured")
 	}
 	ok, err := checker.HasSecret(cfg.APIPartnerID)
 	if err != nil {
