@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"ai-anonymizer/internal/anonymizer"
 	"ai-anonymizer/internal/catalog"
 	"ai-anonymizer/internal/config"
 	"ai-anonymizer/internal/preflight"
@@ -20,6 +21,10 @@ var doctorDeps = preflight.DoctorDeps{
 	SecretChecker: secrets.NewOSSecretChecker(),
 }
 
+var runDeps = anonymizer.Deps{
+	SecretGetter: secrets.NewOSSecretChecker(),
+}
+
 func main() {
 	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -29,7 +34,7 @@ func main() {
 
 func run(args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
-		return errors.New("usage: anonym <doctor|scan|list>")
+		return errors.New("usage: anonym <doctor|scan|list|run>")
 	}
 
 	switch args[0] {
@@ -39,6 +44,8 @@ func run(args []string, stdout, stderr io.Writer) error {
 		return runScan(args[1:], stdout)
 	case "list":
 		return runList(args[1:], stdout)
+	case "run":
+		return runRun(args[1:], stdout)
 	default:
 		return fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -193,6 +200,72 @@ func runList(args []string, stdout io.Writer) error {
 	for _, item := range items {
 		fmt.Fprintf(stdout, "%s\t%s\t%s\n", item.ID, item.Path, item.Status)
 	}
+	return nil
+}
+
+func runRun(args []string, stdout io.Writer) error {
+	fs := flag.NewFlagSet("run", flag.ContinueOnError)
+	fs.SetOutput(stdout)
+
+	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
+	rawPath := fs.String("raw-path", "", "Absolute path to raw files")
+	outputPath := fs.String("output-path", "", "Absolute output path")
+	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
+	baseURL := fs.String("api-base-url", "", "API base URL")
+	partnerID := fs.String("api-partner-id", "", "API partner ID")
+	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
+	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
+	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
+	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
+
+	target := ""
+	parseArgs := args
+	if len(args) > 0 && !strings.HasPrefix(strings.TrimSpace(args[0]), "-") {
+		target = strings.TrimSpace(args[0])
+		parseArgs = args[1:]
+	}
+
+	if err := fs.Parse(parseArgs); err != nil {
+		return err
+	}
+	if target == "" && fs.NArg() > 0 {
+		target = fs.Arg(0)
+	}
+	if target == "" {
+		return errors.New("run: usage anonym run <id|path>")
+	}
+
+	cfg, err := config.Load(config.LoadOptions{
+		ConfigPath:        *cfgPath,
+		RawPath:           *rawPath,
+		OutputPath:        *outputPath,
+		WorkspacePath:     *workspacePath,
+		APIBaseURL:        *baseURL,
+		APIPartnerID:      *partnerID,
+		AllowedHostsCSV:   *allowedHosts,
+		RequestTimeoutSec: *requestTimeoutSec,
+		MaxFileSizeMB:     *maxFileSizeMB,
+		MaxParallelRuns:   *maxParallelRuns,
+	})
+	if err != nil {
+		return err
+	}
+	cfg.APIAllowedHosts = normalizeCSV(cfg.APIAllowedHosts)
+
+	result, err := anonymizer.Execute(cfg, target, runDeps)
+	if err != nil {
+		var ambiguous anonymizer.AmbiguousMatchError
+		if errors.As(err, &ambiguous) {
+			fmt.Fprintf(stdout, "run: multiple matches for %q:\n", target)
+			for _, candidate := range ambiguous.Candidates {
+				fmt.Fprintf(stdout, "%s\t%s\t%s\n", candidate.ID, candidate.Path, candidate.Status)
+			}
+			return errors.New("run: specify explicit id")
+		}
+		return err
+	}
+
+	fmt.Fprintf(stdout, "run: succeeded\t%s\t%s\n", result.Item.ID, result.OutputPath)
 	return nil
 }
 

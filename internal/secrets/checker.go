@@ -34,10 +34,7 @@ func NewOSSecretChecker() OSSecretChecker {
 }
 
 func (c OSSecretChecker) HasSecret(partnerID string) (bool, error) {
-	if strings.TrimSpace(partnerID) == "" {
-		return false, errors.New("partner id is required")
-	}
-	secret, err := c.client.Get(c.service, partnerID)
+	secret, err := c.GetSecret(partnerID)
 	if err != nil {
 		if errors.Is(err, errSecretNotFound) {
 			return false, nil
@@ -45,4 +42,15 @@ func (c OSSecretChecker) HasSecret(partnerID string) (bool, error) {
 		return false, err
 	}
 	return strings.TrimSpace(secret) != "", nil
+}
+
+func (c OSSecretChecker) GetSecret(partnerID string) (string, error) {
+	if strings.TrimSpace(partnerID) == "" {
+		return "", errors.New("partner id is required")
+	}
+	secret, err := c.client.Get(c.service, partnerID)
+	if err != nil {
+		return "", err
+	}
+	return secret, nil
 }
