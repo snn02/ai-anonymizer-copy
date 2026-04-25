@@ -33,6 +33,7 @@
 - Решение: feature-спеки в `openspec/changes/` не создаем до согласования полного workflow разработки.
 - Причина: сначала согласуем набор документов и процесс.
 - Влияние: `docs/versions/*/openspec.md`, `openspec/changes/`.
+- Статус: заменено решением `d-008` для `v1`; для `v2` ограничение действует до отдельного решения.
 
 ### 2026-04-25 / d-005
 
@@ -51,3 +52,14 @@
 - Решение: закрепить единый контракт конфигурации trusted CLI (`docs/technical/configuration.md`) и шаблон `config.example.yaml`; секреты хранить только в OS secret store; приоритет источников конфигурации: flags > env > file.
 - Причина: снизить риск небезопасной конфигурации и неоднозначного поведения между средами.
 - Влияние: `docs/technical/configuration.md`, `config.example.yaml`, `docs/user-guide.md`, `docs/test-scenarios.md`, `docs/versions/v1/plan.md`, `docs/versions/v1/action-log.md`.
+
+### 2026-04-25 / d-008
+
+- Решение: workflow разработки для `v1` согласован и вводится в действие:
+  1. формируется общий план разработки `v1`;
+  2. работа идет итерациями, каждая итерация должна давать законченный и тестируемый результат;
+  3. по итерации создается feature в `openspec/changes/`;
+  4. после реализации итерации выполняются тесты, фиксируются выводы, планируется следующая итерация;
+  5. после завершения всех итераций `v1` выполняются общее тестирование, релиз и запись в `lessons-learned`.
+- Причина: перейти от подготовки документации к управляемому циклу поставки.
+- Влияние: `docs/versions/v1/plan.md`, `docs/versions/v1/openspec.md`, `docs/versions/v1/action-log.md`, `docs/test-scenarios.md`, `docs/technical/release.md`, `agents.md`, `docs/doc-map.md`.

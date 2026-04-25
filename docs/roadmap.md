@@ -14,7 +14,7 @@
   - хранить секреты в OS secret store без plaintext fallback;
   - добавить аудит без PII/секретов с HMAC-идентификатором;
   - закрепить адаптер результата `file_anonymization` тестами.
-- Статус: planned.
+- Статус: in progress (итерация `v1-i1` запланирована).
 - План версии: `versions/v1/plan.md`.
 
 ## v2
@@ -31,4 +31,5 @@
 
 ## Примечание
 
-Feature-спеки в `../openspec/changes/` пока не создаются до согласования workflow разработки.
+- Для `v1` feature-пакеты в `../openspec/changes/` создаются по итерациям (см. `docs/versions/v1/openspec.md`).
+- Для `v2` создание feature-пакетов открывается отдельным решением.

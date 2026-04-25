@@ -27,6 +27,29 @@
 - `anonym run <id|path> [--fields <value>] [--tags <csv>] [--tags-numeration 0|1]`
 - `anonym doctor`
 
+### `anonym doctor` (старт `v1-i1`)
+
+Минимальный preflight в текущей итерации проверяет:
+- `raw_path` находится вне `workspace_path`;
+- `raw_path` существует, доступен и является директорией;
+- `output_path` существует, доступен и является директорией;
+- `output_path` проверяется на запись через write-probe;
+- `api.base_url` использует `https`;
+- host из `api.base_url` входит в `allowed_hosts`;
+- наличие секрета для `api_partner_id` через secret-check адаптер;
+- доступность `GET /v1/tasks/anonymization_fields` с timeout;
+- `max_parallel_runs=1` для `v1`.
+
+Пример запуска:
+- `anonym doctor --raw-path D:/secure-raw --output-path C:/work/project/anonymized --workspace-path C:/work/project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --request-timeout-sec 5 --max-parallel-runs 1`
+
+### `anonym scan` и `anonym list` (промежуточный результат `v1-i1`)
+
+- `scan` выполняет только локальное безопасное обнаружение в `raw_path` и сохраняет очередь в `<workspace>/.anonym/catalog.json`;
+- `scan` применяет лимит `max_file_size_mb` и не индексирует oversized-файлы;
+- `list` выводит элементы очереди в формате `id path status`;
+- `scan/list` не отправляют файлы в API.
+
 ## Настройка конфигурации [v1]
 
 1. Скопировать шаблон `config.example.yaml` в локальный рабочий конфиг.
