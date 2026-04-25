@@ -24,8 +24,11 @@
 
 - `anonym scan`
 - `anonym list`
-- `anonym run <id|path> [--fields <value>] [--tags <csv>] [--tags-numeration 0|1]`
+- `anonym run <id|path>`
 - `anonym doctor`
+
+Примечание:
+- в `v1` команда `run` не поддерживает CLI override-флаги `--fields`, `--tags`, `--tags-numeration`; используются значения из конфигурации/окружения.
 
 ### `anonym doctor` (старт `v1-i1`)
 
@@ -74,9 +77,9 @@
 | `paths.output_path` | путь для анонимизированных файлов в workspace | `--output-path`, `ANON_OUTPUT_PATH`, `config.yaml` | пользователь/администратор рабочего места |
 | `api.base_url` | базовый URL API анонимизации | `--api-base-url`, `ANON_API_BASE_URL`, `config.yaml` | администратор/техлид |
 | `api.partner_id` | идентификатор партнера для вызовов API | `--api-partner-id`, `ANON_API_PARTNER_ID`, `config.yaml` | администратор/техлид |
-| `api.fields` | профиль/поля анонимизации | `--fields`, `ANON_API_FIELDS`, `config.yaml` | администратор/техлид |
-| `api.tags` | дополнительные теги запроса | `--tags`, `ANON_API_TAGS`, `config.yaml` | администратор/техлид |
-| `api.tags_numeration` | режим нумерации тегов (`0/1`) | `--tags-numeration`, `ANON_API_TAGS_NUMERATION`, `config.yaml` | администратор/техлид |
+| `api.fields` | профиль/поля анонимизации | `ANON_API_FIELDS`, `config.yaml` | администратор/техлид |
+| `api.tags` | дополнительные теги запроса | `ANON_API_TAGS`, `config.yaml` | администратор/техлид |
+| `api.tags_numeration` | режим нумерации тегов (`0/1`) | `ANON_API_TAGS_NUMERATION`, `config.yaml` | администратор/техлид |
 | `limits.max_file_size_mb` | лимит размера входного файла | `--max-file-size-mb`, `ANON_MAX_FILE_SIZE_MB`, `config.yaml` | администратор/техлид |
 | `limits.max_pages` | лимит страниц для поддерживаемых форматов | `ANON_MAX_PAGES`, `config.yaml` | администратор/техлид |
 | `limits.request_timeout_sec` | timeout API-запроса | `--request-timeout-sec`, `ANON_REQUEST_TIMEOUT_SEC`, `config.yaml` | администратор/техлид |
@@ -112,3 +115,8 @@
 
 - MCP-обертка над тем же trusted-core CLI.
 - Операционные регламенты секретов и эксплуатации.
+
+## Известные ограничения v1 (risks)
+
+- Текущий page-counter для PDF в `run` реализован эвристически (по структуре PDF), поэтому для отдельных сложных PDF возможна неточная оценка числа страниц.
+- Для `DOCX` первичный источник количества страниц — `docProps/app.xml`; при отсутствии метаданных используется fallback по page-break в `word/document.xml`.
