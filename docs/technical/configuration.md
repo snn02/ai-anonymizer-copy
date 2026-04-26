@@ -42,8 +42,9 @@
 | `security.require_tls_verify` | bool | да | `true` | `true` | `ANON_REQUIRE_TLS_VERIFY` |
 | `audit.retention_days` | int | да | `30` | `90` | `ANON_AUDIT_RETENTION_DAYS` |
 | `audit.hmac_key_id` | string | да | `audit-hmac-v1` | `audit-hmac-v1` | `ANON_AUDIT_HMAC_KEY_ID` |
-| `catalog.path` | string (abs path) | нет | `<workspace>/.anonym/catalog.json` | `C:/work/project/.anonym/catalog.json` | - |
 | `audit.path` | string (abs path) | нет | `<workspace>/.anonym/audit.log` | `C:/work/project/.anonym/audit.log` | - |
+
+`catalog.path` в runtime `v1` не задается через `config/env/CLI` и вычисляется автоматически как `<workspace>/.anonym/catalog.json`.
 
 ## Контракт вызова API для `run` (v1)
 

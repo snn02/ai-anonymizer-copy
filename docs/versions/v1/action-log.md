@@ -314,3 +314,9 @@
 - Тип: изменение
 - Описание: по техлид-ревью исправлены замечания `v1-i4`: восстановлены runtime-default значения в CLI help (`request_timeout/max_file_size/max_pages/max_parallel_runs`) без потери merge-приоритета, добавлен интеграционный тест конфликта источников `CLI > env > config file`, заголовок user-guide возвращен на русский язык.
 - Ссылка: `../../user-guide.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: удален устаревший параметр `catalog.db_path` из `config.example.yaml`; техническая документация синхронизирована с runtime: `catalog.path` в `v1` вычисляется автоматически как `<workspace>/.anonym/catalog.json` и не параметризуется через `config/env/CLI`.
+- Ссылка: `../../technical/configuration.md`

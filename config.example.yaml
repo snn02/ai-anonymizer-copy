@@ -31,9 +31,6 @@ audit:
   retention_days: 30
   hmac_key_id: "audit-hmac-v1"
 
-catalog:
-  db_path: "C:/work/ai-anonymizer/.anonym/catalog.db"
-
 logging:
   level: "info"    # debug | info | warn | error
   format: "json"   # json | console
