@@ -1,4 +1,4 @@
-# tasks: v1-i4 config first loading
+﻿# tasks: v1-i4 config first loading
 
 ## requirement trace
 
@@ -11,54 +11,55 @@
 
 ## security dod (для T1-T4)
 
-- [ ] runtime реализован в production-пути `doctor/scan/list/run`;
-- [ ] минимум один негативный тест на каждый security-check;
-- [ ] отсутствует insecure fallback для секретов и API-заголовков;
-- [ ] evidence зафиксирован прогоном `go test ./...`.
+- [x] runtime реализован в production-пути `doctor/scan/list/run`;
+- [x] минимум один негативный тест на каждый security-check;
+- [x] отсутствует insecure fallback для секретов и API-заголовков;
+- [x] evidence зафиксирован прогоном `go test ./...`.
 
 ## tasks
 
 ### T1. yaml loading in internal config
 
-- [ ] реализовать чтение `config.yaml` в `internal/config` с поддержкой пути из `--config`;
-- [ ] добавить маппинг полей `paths/api/limits/security/audit` в runtime-структуру;
-- [ ] сохранить текущую валидацию обязательных полей и безопасные дефолты `v1`.
+- [x] реализовать чтение `config.yaml` в `internal/config` с поддержкой пути из `--config`;
+- [x] добавить маппинг полей `paths/api/limits/security/audit` в runtime-структуру;
+- [x] сохранить текущую валидацию обязательных полей и безопасные дефолты `v1`.
 
 ### T2. precedence and merge rules
 
-- [ ] реализовать merge-логику, где приоритет строго `CLI > env > config file`;
-- [ ] зафиксировать единые правила для scalar/list параметров (`allowed_hosts`);
-- [ ] убедиться, что источники секретов не меняются (только OS secret store).
+- [x] реализовать merge-логику, где приоритет строго `CLI > env > config file`;
+- [x] зафиксировать единые правила для scalar/list параметров (`allowed_hosts`);
+- [x] убедиться, что источники секретов не меняются (только OS secret store).
 
 ### T3. tests for config-first runtime behavior
 
-- [ ] добавить/обновить unit-тесты на чтение YAML и fallback-поведение;
-- [ ] добавить/обновить unit-тесты на приоритет `CLI > env > config file`;
-- [ ] добавить/обновить негативные тесты на битый YAML и отсутствующий конфиг.
+- [x] добавить/обновить unit-тесты на чтение YAML и fallback-поведение;
+- [x] добавить/обновить unit-тесты на приоритет `CLI > env > config file`;
+- [x] добавить/обновить негативные тесты на битый YAML и отсутствующий конфиг.
 
 ### T4. docs synchronization for config-first
 
-- [ ] обновить `docs/user-guide.md`: config-first как основной сценарий, override через env/CLI как отдельные кейсы;
-- [ ] привести заголовки и подзаголовки user-guide к написанию с заглавной буквы;
-- [ ] синхронизировать `docs/technical/configuration.md`, `docs/user-scenarios.md`, `docs/test-scenarios.md`, `docs/versions/v1/action-log.md`.
+- [x] обновить `docs/user-guide.md`: config-first как основной сценарий, override через env/CLI как отдельные кейсы;
+- [x] привести заголовки и подзаголовки user-guide к написанию с заглавной буквы;
+- [x] синхронизировать `docs/technical/configuration.md`, `docs/user-scenarios.md`, `docs/test-scenarios.md`, `docs/versions/v1/action-log.md`.
 
 ## tests
 
 ### unit (U*)
 
-- [ ] U1: значения из валидного `config.yaml` попадают в `Config`.
-- [ ] U2: при отсутствии `env/CLI` runtime использует значения из файла.
-- [ ] U3: env переопределяет значения из `config.yaml`.
-- [ ] U4: CLI переопределяет значения из env и `config.yaml`.
-- [ ] U5: невалидный YAML возвращает явную ошибку загрузки.
+- [x] U1: значения из валидного `config.yaml` попадают в `Config`.
+- [x] U2: при отсутствии `env/CLI` runtime использует значения из файла.
+- [x] U3: env переопределяет значения из `config.yaml`.
+- [x] U4: CLI переопределяет значения из env и `config.yaml`.
+- [x] U5: невалидный YAML возвращает явную ошибку загрузки.
 
 ### integration (I*)
 
-- [ ] I1: `anonym doctor --config <path>` проходит preflight при заполненном конфиге и секретах.
-- [ ] I2: при конфликте источников runtime берет значения строго по приоритету `CLI > env > config file`.
-- [ ] I3: компактные вызовы `scan/list/run` с `--config` работают без дублирования полного набора флагов.
-- [ ] I4: при отсутствии/битом конфиге команда завершается диагностируемой ошибкой до выполнения runtime-операции.
+- [x] I1: `anonym doctor --config <path>` проходит preflight при заполненном конфиге и секретах.
+- [x] I2: при конфликте источников runtime берет значения строго по приоритету `CLI > env > config file` (покрыто `TestRunDoctorConfigEnvCLIConflictUsesCLI`).
+- [x] I3: компактные вызовы `scan/list/run` с `--config` работают без дублирования полного набора флагов.
+- [x] I4: при отсутствии/битом конфиге команда завершается диагностируемой ошибкой до выполнения runtime-операции.
 
 ### regression
 
-- [ ] R1: `go test ./...` зеленый после изменений.
+- [x] R1: `go test ./...` зеленый после изменений.
+

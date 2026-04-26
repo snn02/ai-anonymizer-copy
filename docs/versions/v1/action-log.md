@@ -290,3 +290,27 @@
 - Тип: изменение
 - Описание: создан OpenSpec feature-пакет `v1-i4-config-first-loading` (`proposal/tasks/spec`) для реализации config-first runtime-конфигурации и синхронизирован индекс `docs/versions/v1/openspec.md` с переводом `v1-i4` в активные итерации.
 - Ссылка: `openspec.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: реализован runtime `v1-i4` для config-first конфигурации: `internal/config` теперь читает `config.yaml`, поддерживает явный `--config`, применяет merge с приоритетом `CLI > env > config file`, и возвращает диагностируемые ошибки чтения/парсинга.
+- Ссылка: `../../../openspec/changes/v1-i4-config-first-loading/tasks.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: подтверждено тестами `v1-i4`: добавлены unit-тесты `internal/config/config_test.go` на чтение YAML, приоритет override и негативные кейсы missing/invalid config; прогон `go test ./internal/config`, `go test ./cmd/anonym`, `go test ./...` зеленый.
+- Ссылка: `../../test-scenarios.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: user-guide переведен на config-first сценарий: добавлены компактные команды запуска через `--config`, отдельные кейсы override через env/CLI и рекомендации «когда использовать»; заголовки и подзаголовки приведены к формату с заглавной буквы.
+- Ссылка: `../../user-guide.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: по техлид-ревью исправлены замечания `v1-i4`: восстановлены runtime-default значения в CLI help (`request_timeout/max_file_size/max_pages/max_parallel_runs`) без потери merge-приоритета, добавлен интеграционный тест конфликта источников `CLI > env > config file`, заголовок user-guide возвращен на русский язык.
+- Ссылка: `../../user-guide.md`

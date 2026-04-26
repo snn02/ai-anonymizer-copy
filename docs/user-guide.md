@@ -1,88 +1,87 @@
-﻿# user guide
+# Руководство Пользователя
 
-## для кого это руководство
+## Для Кого Это Руководство
 
-Этот документ для пользователя AI IDE, который хочет запустить `anonym` и получить рабочий результат с первого раза.
+Документ для пользователя AI IDE, который хочет запустить `anonym` и получить результат с первого раза.
 
-Поддержаны два сценария:
-1. у вас уже есть готовый `anonym.exe`;
-2. вы сделали `git clone` репозитория и запускаете через Go.
+Поддержаны два варианта запуска:
+1. у вас есть готовый `anonym.exe`;
+2. вы запускаете из исходников через `go run`.
 
-## что делает инструмент
+## Что Делает Инструмент
 
-`anonym` — это CLI для безопасной анонимизации файлов:
-1. `scan` — находит файлы в `raw_path` и кладет их в локальную очередь;
-2. `list` — показывает очередь (`id`, путь, статус);
-3. `run <id|path>` — отправляет выбранный файл в API и сохраняет результат в `output_path`;
-4. `doctor` — проверяет, что окружение настроено корректно.
+`anonym` — CLI для безопасной анонимизации файлов:
+1. `doctor` — проверяет конфигурацию, доступ к API и секреты;
+2. `scan` — индексирует файлы из `raw_path` в локальный каталог;
+3. `list` — показывает очередь (`id`, путь, статус);
+4. `run <id|path>` — отправляет выбранный файл в API и сохраняет результат в `output_path`.
 
-## обязательная модель папок
+## Обязательная Модель Папок
 
-Перед первым запуском создайте три папки:
+Перед первым запуском подготовьте:
 1. `raw_path` — папка с исходными файлами, обязательно вне IDE workspace;
-2. `workspace_path` — рабочая папка вашего проекта в AI IDE;
-3. `output_path` — папка для результатов, обязательно внутри `workspace_path`.
+2. `workspace_path` — корень проекта в AI IDE;
+3. `output_path` — папка результатов, обязательно внутри `workspace_path`.
 
 Пример:
 1. `D:\secure-raw` (`raw_path`)
 2. `C:\work\my-ai-project` (`workspace_path`)
 3. `C:\work\my-ai-project\anonymized` (`output_path`)
 
-## обязательные параметры и секреты
+## Приоритет Источников Конфигурации
 
-### параметры (минимум для старта)
+Runtime применяет значения в порядке:
+1. CLI-флаги (самый высокий приоритет);
+2. Переменные окружения;
+3. `config.yaml`.
 
-Обязательные параметры для `v1`:
-1. `--raw-path` или `ANON_RAW_PATH`
-2. `--output-path` или `ANON_OUTPUT_PATH`
-3. `--workspace-path` или `ANON_WORKSPACE_PATH`
-4. `--api-base-url` или `ANON_API_BASE_URL` (только `https`)
-5. `--api-partner-id` или `ANON_API_PARTNER_ID` (строго UUID)
-6. `--allowed-hosts` или `ANON_ALLOWED_HOSTS`
-7. `--max-parallel-runs 1` (или `ANON_MAX_PARALLEL_RUNS=1`)
+Практика для `v1`:
+1. основной сценарий — заполнить `config.yaml` и запускать компактными командами;
+2. env/CLI использовать как точечный override без копирования всех параметров.
+
+## Обязательные Параметры И Секреты
+
+### Параметры Runtime V1
+
+Обязательные поля:
+1. `paths.raw_path`
+2. `paths.output_path`
+3. `paths.workspace_path`
+4. `api.base_url` (только `https`)
+5. `api.partner_id` (строго UUID)
+6. `security.allowed_hosts`
+7. `limits.max_parallel_runs=1`
 
 Рекомендуемые лимиты:
-1. `--max-file-size-mb 25`
-2. `--max-pages 300`
-3. `--request-timeout-sec 5`
+1. `limits.max_file_size_mb=25`
+2. `limits.max_pages=300`
+3. `limits.request_timeout_sec=5`
 
-### секреты (обязательно)
+### Секреты
 
-Секреты должны храниться только в OS secret store (не в `yaml`, не в `.env`).
+Секреты хранятся только в OS secret store.
+Нельзя хранить секреты в `config.yaml` и `.env`.
 
-### как сопоставить данные от разработчика api
+### Как Сопоставить Данные От Разработчика API
 
 Если вам передали:
-1. `ключ` — это значение для заголовка `Authorization` (хранится как секрет в keyring).
-2. `партнер` — это `partner-id` и `api.partner_id` (должен быть UUID).
-3. `пользователь` — это `user-id` (опциональный UUID заголовок).
+1. `ключ` — это значение заголовка `Authorization` (кладется в keyring);
+2. `партнер` — это `partner-id` и `api.partner_id` (UUID);
+3. `пользователь` — это `user-id` (опциональный UUID-заголовок, не используется runtime `v1`).
 
-Важно для текущего runtime `v1`:
+### Что Важно Для Runtime V1
+
 1. CLI отправляет `Authorization`, `partner-id`, `fields=anonymizer`.
-2. CLI не отправляет `user-id` и `tags-numeration`.
-3. `user-id` можно использовать только в ручном HTTP-вызове или в следующей версии runtime.
+2. `user-id`, `tags`, `tags-numeration` не параметризуются через CLI/env/config.
+
+## Настройка Секретов В OS Secret Store
 
 Общий шаблон:
 1. `service`: `ai-anonymizer/api`
-2. `account`: значение `api.partner_id` (например, `da315a9a-0000-0000-0000-000000000000`)  
-   `value`: API secret/token
-3. `account`: значение `audit.hmac_key_id` (обычно `audit-hmac-v1`)  
-   `value`: секрет для HMAC аудита
+2. `account=<api.partner_id>`, `value=<API_TOKEN>`
+3. `account=<audit.hmac_key_id>`, `value=<HMAC_SECRET>`
 
-#### что такое `audit.hmac_key_id` и где взять значение
-
-1. `audit.hmac_key_id` — это имя записи в keyring для audit-HMAC ключа.
-2. Пример: `audit-hmac-v1` (это именно `account`, не сам секрет).
-3. `value` для этой записи генерирует ваша команда/администратор (это не API-токен).
-4. Рекомендуемая генерация в PowerShell (первый вариант):
-
-```powershell
-[Convert]::ToBase64String((1..32 | ForEach-Object {Get-Random -Maximum 256}))
-```
-
-Сохраните результат команды как `value` для `account = audit-hmac-v1`.
-
-#### windows (credential manager)
+### Windows (Credential Manager)
 
 ```powershell
 cmdkey /generic:"ai-anonymizer/api:<partner_uuid>" /user:"<partner_uuid>" /pass:"<API_TOKEN>"
@@ -95,162 +94,114 @@ cmdkey /generic:"ai-anonymizer/api:audit-hmac-v1" /user:"audit-hmac-v1" /pass:"<
 cmdkey /list | findstr "ai-anonymizer/api"
 ```
 
-#### linux (secret service / gnome keyring)
+### Linux (Secret Service / Gnome Keyring)
 
 ```bash
 echo -n "<API_TOKEN>" | secret-tool store --label="ai-anonymizer api partner" service "ai-anonymizer/api" username "<partner_uuid>"
 echo -n "<HMAC_SECRET>" | secret-tool store --label="ai-anonymizer audit hmac" service "ai-anonymizer/api" username "audit-hmac-v1"
 ```
 
-Проверка:
-
-```bash
-secret-tool lookup service "ai-anonymizer/api" username "<partner_uuid>"
-secret-tool lookup service "ai-anonymizer/api" username "audit-hmac-v1"
-```
-
-#### macos (keychain)
+### Macos (Keychain)
 
 ```bash
 security add-generic-password -U -s "ai-anonymizer/api" -a "<partner_uuid>" -w "<API_TOKEN>"
 security add-generic-password -U -s "ai-anonymizer/api" -a "audit-hmac-v1" -w "<HMAC_SECRET>"
 ```
 
-Проверка:
+## Приоритетный Сценарий: Запуск Через Config
 
-```bash
-security find-generic-password -s "ai-anonymizer/api" -wa "<partner_uuid>"
-security find-generic-password -s "ai-anonymizer/api" -wa "audit-hmac-v1"
+### Шаг 1. Подготовьте Config Файл
+
+Создайте `config.yaml` по образцу `config.example.yaml` и заполните минимум:
+
+```yaml
+paths:
+  raw_path: "D:/secure-raw"
+  workspace_path: "C:/work/my-ai-project"
+  output_path: "C:/work/my-ai-project/anonymized"
+api:
+  base_url: "https://production-retrievals.ai.rarus-cloud.ru"
+  partner_id: "00000000-0000-0000-0000-000000000000"
+limits:
+  max_file_size_mb: 25
+  max_pages: 300
+  request_timeout_sec: 5
+  max_parallel_runs: 1
+security:
+  allowed_hosts:
+    - "production-retrievals.ai.rarus-cloud.ru"
+audit:
+  retention_days: 30
+  hmac_key_id: "audit-hmac-v1"
 ```
 
-#### финальная проверка после добавления секретов
+### Шаг 2. Запуск С Компактными Командами
 
-1. запустите `doctor`;
-2. если секреты не найдены, `doctor` вернет понятную ошибку и подскажет, что проверить.
-
-## вариант 1: у вас уже есть `anonym.exe`
-
-### что должно быть под рукой
-
-1. файл `anonym.exe` (например, `C:\tools\anonym\anonym.exe`);
-2. подготовленные папки `raw_path/workspace_path/output_path`;
-3. настроенные секреты в OS secret store.
-
-### первый запуск
+Если у вас `anonym.exe`:
 
 ```powershell
-C:\tools\anonym\anonym.exe doctor `
-  --raw-path D:\secure-raw `
-  --output-path C:\work\my-ai-project\anonymized `
-  --workspace-path C:\work\my-ai-project `
-  --api-base-url https://production-retrievals.ai.rarus-cloud.ru `
-  --api-partner-id <partner_uuid> `
-  --allowed-hosts production-retrievals.ai.rarus-cloud.ru `
-  --max-file-size-mb 25 `
-  --max-pages 300 `
-  --request-timeout-sec 5 `
-  --max-parallel-runs 1
+C:\tools\anonym\anonym.exe doctor --config C:\work\my-ai-project\config.yaml
+C:\tools\anonym\anonym.exe scan --config C:\work\my-ai-project\config.yaml
+C:\tools\anonym\anonym.exe list --config C:\work\my-ai-project\config.yaml
+C:\tools\anonym\anonym.exe run <id> --config C:\work\my-ai-project\config.yaml
 ```
 
-Если в ответе `doctor: ok`, можно работать.
-
-### рабочий цикл
+Если запуск через исходники:
 
 ```powershell
-C:\tools\anonym\anonym.exe scan --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://production-retrievals.ai.rarus-cloud.ru --api-partner-id <partner_uuid> --allowed-hosts production-retrievals.ai.rarus-cloud.ru --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
-
-C:\tools\anonym\anonym.exe list --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://production-retrievals.ai.rarus-cloud.ru --api-partner-id <partner_uuid> --allowed-hosts production-retrievals.ai.rarus-cloud.ru --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
-
-C:\tools\anonym\anonym.exe run <id> --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://production-retrievals.ai.rarus-cloud.ru --api-partner-id <partner_uuid> --allowed-hosts production-retrievals.ai.rarus-cloud.ru --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml
+go run ./cmd/anonym scan --config C:\work\my-ai-project\config.yaml
+go run ./cmd/anonym list --config C:\work\my-ai-project\config.yaml
+go run ./cmd/anonym run <id> --config C:\work\my-ai-project\config.yaml
 ```
 
-## вариант 2: вы сделали `git clone`
+## Override Параметров: Когда И Как Делать
 
-### какие папки нужны в репозитории
+### Кейс 1. Override Через Env (Для Серии Запусков)
 
-Для запуска через `go run` должны быть:
-1. `cmd/anonym/` (точка входа CLI)
-2. `internal/` (runtime-модули)
-3. `go.mod`
-4. `go.sum`
-5. `config.example.yaml` (шаблон параметров)
+Когда использовать:
+1. в этой сессии нужно временно сменить 1-2 параметра;
+2. команды запускаются много раз, и не хочется повторять флаг.
 
-### запуск из исходников
-
-Из корня репозитория:
+Пример:
 
 ```powershell
-go run ./cmd/anonym doctor `
-  --raw-path D:\secure-raw `
-  --output-path C:\work\my-ai-project\anonymized `
-  --workspace-path C:\work\my-ai-project `
-  --api-base-url https://production-retrievals.ai.rarus-cloud.ru `
-  --api-partner-id <partner_uuid> `
-  --allowed-hosts production-retrievals.ai.rarus-cloud.ru `
-  --max-file-size-mb 25 `
-  --max-pages 300 `
-  --request-timeout-sec 5 `
-  --max-parallel-runs 1
+$env:ANON_REQUEST_TIMEOUT_SEC="15"
+go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml
+go run ./cmd/anonym run <id> --config C:\work\my-ai-project\config.yaml
 ```
 
-Дальше используйте те же команды `scan`, `list`, `run`, заменив `anonym.exe` на `go run ./cmd/anonym`.
+### Кейс 2. Override Через CLI (Разовый Запуск)
 
-## как задавать параметры без ошибок
+Когда использовать:
+1. разово нужно проверить другой хост/лимит;
+2. важно явно зафиксировать override в истории команды.
 
-### безопасный способ для первого запуска
-
-Используйте CLI-флаги в каждой команде. Так проще диагностировать ошибки.
-
-### через переменные окружения (когда команды запускаются часто)
-
-Пример для PowerShell:
+Пример:
 
 ```powershell
-$env:ANON_RAW_PATH="D:\secure-raw"
-$env:ANON_OUTPUT_PATH="C:\work\my-ai-project\anonymized"
-$env:ANON_WORKSPACE_PATH="C:\work\my-ai-project"
-$env:ANON_API_BASE_URL="https://production-retrievals.ai.rarus-cloud.ru"
-$env:ANON_API_PARTNER_ID="<partner_uuid>"
-$env:ANON_ALLOWED_HOSTS="production-retrievals.ai.rarus-cloud.ru"
-$env:ANON_MAX_FILE_SIZE_MB="25"
-$env:ANON_MAX_PAGES="300"
-$env:ANON_REQUEST_TIMEOUT_SEC="5"
-$env:ANON_MAX_PARALLEL_RUNS="1"
-$env:ANON_AUDIT_RETENTION_DAYS="30"
-$env:ANON_AUDIT_HMAC_KEY_ID="audit-hmac-v1"
+go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --api-base-url https://pilot-retrievals.company.local --allowed-hosts pilot-retrievals.company.local
 ```
 
-После этого можно запускать короче:
+## Диагностика Config Режима
 
-```powershell
-go run ./cmd/anonym doctor
-go run ./cmd/anonym scan
-go run ./cmd/anonym list
-go run ./cmd/anonym run <id>
-```
+1. Если `--config` указан явно и файл не найден, команда завершится ошибкой загрузки файла.
+2. Если файл не указан явно и дефолтный путь отсутствует, runtime продолжит с env/CLI.
+3. При битом YAML команда завершится явной ошибкой парсинга конфига.
 
-## важные замечания по v1
+## Важные Ограничения V1
 
-1. `run` в `v1` не поддерживает CLI override-флаги `--fields`, `--tags`, `--tags-numeration`.
-2. В `v1` заголовок `fields` отправляется фиксированно как `anonymizer`.
-3. В `v1` заголовок `user-id` не отправляется из CLI runtime.
-4. Секреты из `config.yaml` и plaintext env не используются как fallback.
-5. Аудит пишется в `<workspace>/.anonym/audit.log` в формате JSONL:
-   - `file_id` хранится только как HMAC;
-   - исходный raw-файл и секреты в лог не пишутся.
-6. `config.example.yaml` используйте как шаблон и чек-лист параметров; для надежного запуска в `v1` задавайте параметры через `flags/env`.
+1. `fields` фиксирован в `anonymizer`.
+2. `user-id` не отправляется из CLI runtime.
+3. `max_parallel_runs` в `v1` должен быть `1`.
+4. Секреты не читаются из plaintext-config/env fallback.
+5. Audit пишется в `<workspace>/.anonym/audit.log` (JSONL), `file_id` хранится как HMAC.
 
-## быстрый чек-лист перед началом
+## Быстрый Чек-Лист Перед Запуском
 
 1. `raw_path` вне workspace, `output_path` внутри workspace.
 2. `api.base_url` начинается с `https://`.
-3. Host API входит в `allowed_hosts`.
-4. В OS secret store есть два секрета (`api.partner_id` и `audit.hmac_key_id`).
+3. Host API присутствует в `allowed_hosts`.
+4. В OS secret store есть записи для `api.partner_id` и `audit.hmac_key_id`.
 5. `max_parallel_runs = 1`.
 6. `doctor` возвращает `doctor: ok`.
-
-## известные ограничения v1
-
-1. Подсчет страниц PDF в `run` эвристический (по структуре PDF), в редких сложных файлах возможна неточность.
-2. Для DOCX основной источник страниц — `docProps/app.xml`; при отсутствии метаданных применяется fallback по page-break в `word/document.xml`.
-

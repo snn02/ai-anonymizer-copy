@@ -71,18 +71,20 @@ func runDoctor(args []string, stdout io.Writer) error {
 		return err
 	}
 
+	configPathExplicit := wasFlagProvided(fs, "config")
 	cfg, err := config.Load(config.LoadOptions{
-		ConfigPath:        *cfgPath,
-		RawPath:           *rawPath,
-		OutputPath:        *outputPath,
-		WorkspacePath:     *workspacePath,
-		APIBaseURL:        *baseURL,
-		APIPartnerID:      *partnerID,
-		AllowedHostsCSV:   *allowedHosts,
-		RequestTimeoutSec: *requestTimeoutSec,
-		MaxFileSizeMB:     *maxFileSizeMB,
-		MaxPages:          *maxPages,
-		MaxParallelRuns:   *maxParallelRuns,
+		ConfigPath:         *cfgPath,
+		ConfigPathExplicit: configPathExplicit,
+		RawPath:            *rawPath,
+		OutputPath:         *outputPath,
+		WorkspacePath:      *workspacePath,
+		APIBaseURL:         *baseURL,
+		APIPartnerID:       *partnerID,
+		AllowedHostsCSV:    *allowedHosts,
+		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
+		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
+		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
+		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
 	})
 	if err != nil {
 		return err
@@ -116,18 +118,20 @@ func runScan(args []string, stdout io.Writer) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	configPathExplicit := wasFlagProvided(fs, "config")
 	cfg, err := config.Load(config.LoadOptions{
-		ConfigPath:        *cfgPath,
-		RawPath:           *rawPath,
-		OutputPath:        *outputPath,
-		WorkspacePath:     *workspacePath,
-		APIBaseURL:        *baseURL,
-		APIPartnerID:      *partnerID,
-		AllowedHostsCSV:   *allowedHosts,
-		RequestTimeoutSec: *requestTimeoutSec,
-		MaxFileSizeMB:     *maxFileSizeMB,
-		MaxPages:          *maxPages,
-		MaxParallelRuns:   *maxParallelRuns,
+		ConfigPath:         *cfgPath,
+		ConfigPathExplicit: configPathExplicit,
+		RawPath:            *rawPath,
+		OutputPath:         *outputPath,
+		WorkspacePath:      *workspacePath,
+		APIBaseURL:         *baseURL,
+		APIPartnerID:       *partnerID,
+		AllowedHostsCSV:    *allowedHosts,
+		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
+		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
+		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
+		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
 	})
 	if err != nil {
 		return err
@@ -171,18 +175,20 @@ func runList(args []string, stdout io.Writer) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	configPathExplicit := wasFlagProvided(fs, "config")
 	cfg, err := config.Load(config.LoadOptions{
-		ConfigPath:        *cfgPath,
-		RawPath:           *rawPath,
-		OutputPath:        *outputPath,
-		WorkspacePath:     *workspacePath,
-		APIBaseURL:        *baseURL,
-		APIPartnerID:      *partnerID,
-		AllowedHostsCSV:   *allowedHosts,
-		RequestTimeoutSec: *requestTimeoutSec,
-		MaxFileSizeMB:     *maxFileSizeMB,
-		MaxPages:          *maxPages,
-		MaxParallelRuns:   *maxParallelRuns,
+		ConfigPath:         *cfgPath,
+		ConfigPathExplicit: configPathExplicit,
+		RawPath:            *rawPath,
+		OutputPath:         *outputPath,
+		WorkspacePath:      *workspacePath,
+		APIBaseURL:         *baseURL,
+		APIPartnerID:       *partnerID,
+		AllowedHostsCSV:    *allowedHosts,
+		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
+		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
+		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
+		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
 	})
 	if err != nil {
 		return err
@@ -242,18 +248,20 @@ func runRun(args []string, stdout io.Writer) error {
 		return errors.New("run: usage anonym run <id|path>")
 	}
 
+	configPathExplicit := wasFlagProvided(fs, "config")
 	cfg, err := config.Load(config.LoadOptions{
-		ConfigPath:        *cfgPath,
-		RawPath:           *rawPath,
-		OutputPath:        *outputPath,
-		WorkspacePath:     *workspacePath,
-		APIBaseURL:        *baseURL,
-		APIPartnerID:      *partnerID,
-		AllowedHostsCSV:   *allowedHosts,
-		RequestTimeoutSec: *requestTimeoutSec,
-		MaxFileSizeMB:     *maxFileSizeMB,
-		MaxPages:          *maxPages,
-		MaxParallelRuns:   *maxParallelRuns,
+		ConfigPath:         *cfgPath,
+		ConfigPathExplicit: configPathExplicit,
+		RawPath:            *rawPath,
+		OutputPath:         *outputPath,
+		WorkspacePath:      *workspacePath,
+		APIBaseURL:         *baseURL,
+		APIPartnerID:       *partnerID,
+		AllowedHostsCSV:    *allowedHosts,
+		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
+		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
+		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
+		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
 	})
 	if err != nil {
 		return err
@@ -286,4 +294,21 @@ func normalizeCSV(items []string) []string {
 		}
 	}
 	return result
+}
+
+func wasFlagProvided(fs *flag.FlagSet, name string) bool {
+	found := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
+}
+
+func intValueIfSet(fs *flag.FlagSet, name string, value int) int {
+	if wasFlagProvided(fs, name) {
+		return value
+	}
+	return 0
 }

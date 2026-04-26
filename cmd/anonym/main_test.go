@@ -370,9 +370,245 @@ func TestRunMarksCatalogFailedWhenAPIFails(t *testing.T) {
 	}
 }
 
+func TestRunDoctorWithConfigOnly(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/tasks/anonymization_fields" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	prevDeps := doctorDeps
+	doctorDeps = preflight.DoctorDeps{
+		HTTPClient:    server.Client(),
+		SecretChecker: alwaysTrueSecretChecker{},
+	}
+	defer func() { doctorDeps = prevDeps }()
+
+	raw := filepath.Join(t.TempDir(), "raw")
+	workspace := filepath.Join(t.TempDir(), "workspace")
+	output := filepath.Join(workspace, "anonymized")
+	if err := os.MkdirAll(raw, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(output, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       server.URL,
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"127.0.0.1", "localhost"},
+	})
+
+	var out bytes.Buffer
+	err := run([]string{
+		"doctor",
+		"--config", cfgPath,
+	}, &out, &out)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !strings.Contains(out.String(), "doctor: ok") {
+		t.Fatalf("expected success output, got %q", out.String())
+	}
+}
+
+func TestRunCompactFlowWithConfigOnly(t *testing.T) {
+	raw := filepath.Join(t.TempDir(), "raw")
+	workspace := filepath.Join(t.TempDir(), "workspace")
+	output := filepath.Join(workspace, "anonymized")
+	if err := os.MkdirAll(filepath.Join(raw, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(output, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(raw, "in", "sample.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/tasks/file_anonymization":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"result": "ANON"})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	prevRunDeps := runDeps
+	runDeps = runDepsForTest(server.Client())
+	defer func() { runDeps = prevRunDeps }()
+
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       server.URL,
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"127.0.0.1", "localhost"},
+	})
+
+	var scanOut bytes.Buffer
+	if err := run([]string{"scan", "--config", cfgPath}, &scanOut, &scanOut); err != nil {
+		t.Fatalf("scan failed: %v", err)
+	}
+	if !strings.Contains(scanOut.String(), "scan: indexed 1 file(s)") {
+		t.Fatalf("unexpected scan output: %q", scanOut.String())
+	}
+
+	var listOut bytes.Buffer
+	if err := run([]string{"list", "--config", cfgPath}, &listOut, &listOut); err != nil {
+		t.Fatalf("list failed: %v", err)
+	}
+	if !strings.Contains(listOut.String(), "in/sample.txt\tscanned") {
+		t.Fatalf("unexpected list output: %q", listOut.String())
+	}
+
+	var runOut bytes.Buffer
+	err := run([]string{
+		"run",
+		catalog.BuildID("in/sample.txt"),
+		"--config", cfgPath,
+	}, &runOut, &runOut)
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	if !strings.Contains(runOut.String(), "run: succeeded") {
+		t.Fatalf("unexpected run output: %q", runOut.String())
+	}
+}
+
+func TestRunDoctorFailsOnMissingExplicitConfig(t *testing.T) {
+	missingCfg := filepath.Join(t.TempDir(), "missing.yaml")
+	var out bytes.Buffer
+	err := run([]string{
+		"doctor",
+		"--config", missingCfg,
+	}, &out, &out)
+	if err == nil {
+		t.Fatal("expected error for missing explicit config")
+	}
+	if !strings.Contains(err.Error(), "config: file") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRunDoctorConfigEnvCLIConflictUsesCLI(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/tasks/anonymization_fields" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	prevDeps := doctorDeps
+	doctorDeps = preflight.DoctorDeps{
+		HTTPClient:    server.Client(),
+		SecretChecker: alwaysTrueSecretChecker{},
+	}
+	defer func() { doctorDeps = prevDeps }()
+
+	raw := filepath.Join(t.TempDir(), "raw")
+	workspace := filepath.Join(t.TempDir(), "workspace")
+	output := filepath.Join(workspace, "anonymized")
+	if err := os.MkdirAll(raw, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(output, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       "https://file.invalid.local",
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"file.invalid.local"},
+	})
+
+	t.Setenv("ANON_API_BASE_URL", "https://env.invalid.local")
+	t.Setenv("ANON_ALLOWED_HOSTS", "env.invalid.local")
+
+	var out bytes.Buffer
+	err := run([]string{
+		"doctor",
+		"--config", cfgPath,
+		"--api-base-url", server.URL,
+		"--allowed-hosts", "127.0.0.1,localhost",
+	}, &out, &out)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !strings.Contains(out.String(), "doctor: ok") {
+		t.Fatalf("expected success output, got %q", out.String())
+	}
+}
+
 func runDepsForTest(client *http.Client) anonymizer.Deps {
 	return anonymizer.Deps{
 		HTTPClient:   client,
 		SecretGetter: staticSecretGetter{value: "token"},
 	}
+}
+
+type runtimeConfigValues struct {
+	RawPath       string
+	OutputPath    string
+	WorkspacePath string
+	BaseURL       string
+	PartnerID     string
+	AllowedHosts  []string
+}
+
+func writeRuntimeConfig(t *testing.T, values runtimeConfigValues) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	lines := []string{
+		"paths:",
+		"  raw_path: \"" + normalizeYAMLPath(values.RawPath) + "\"",
+		"  output_path: \"" + normalizeYAMLPath(values.OutputPath) + "\"",
+		"  workspace_path: \"" + normalizeYAMLPath(values.WorkspacePath) + "\"",
+		"api:",
+		"  base_url: \"" + values.BaseURL + "\"",
+		"  partner_id: \"" + values.PartnerID + "\"",
+		"limits:",
+		"  max_file_size_mb: 25",
+		"  max_pages: 300",
+		"  request_timeout_sec: 5",
+		"  max_parallel_runs: 1",
+		"security:",
+		"  allowed_hosts:",
+	}
+	for _, host := range values.AllowedHosts {
+		trimmed := strings.TrimSpace(host)
+		if trimmed != "" {
+			lines = append(lines, "    - \""+trimmed+"\"")
+		}
+	}
+	lines = append(lines,
+		"audit:",
+		"  retention_days: 30",
+		"  hmac_key_id: \"audit-hmac-v1\"",
+	)
+	content := strings.Join(lines, "\n") + "\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write config file: %v", err)
+	}
+	return path
+}
+
+func normalizeYAMLPath(value string) string {
+	return strings.ReplaceAll(value, "\\", "/")
 }
