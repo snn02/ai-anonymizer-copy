@@ -385,6 +385,48 @@ func TestExecuteWritesAuditEntryWithHMACSafeFields(t *testing.T) {
 	}
 }
 
+func TestExecuteTrimsAuthorizationHeaderValue(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.AuditHMACKeyID = "audit-hmac-v1"
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("PII"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotAuth string
+	serverURL, serverClient, cleanup := newHeaderCaptureAPIClient(&gotAuth)
+	defer cleanup()
+	cfg.APIBaseURL = serverURL
+	cfg.APIAllowedHosts = []string{"127.0.0.1", "localhost"}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		HTTPClient: serverClient,
+		SecretGetter: mapSecretGetter{
+			values: map[string]string{
+				cfg.APIPartnerID:   "\r\napi-secret\r\n",
+				cfg.AuditHMACKeyID: "audit-secret",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if gotAuth != "api-secret" {
+		t.Fatalf("unexpected Authorization header value %q", gotAuth)
+	}
+}
+
 func baseConfig(t *testing.T) config.Config {
 	t.Helper()
 
@@ -425,6 +467,20 @@ func newSuccessAPIClient(responseBody []byte, contentType string) (string, *http
 		w.Header().Set("Content-Type", contentType)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(responseBody)
+	}))
+	return server.URL, server.Client(), server.Close
+}
+
+func newHeaderCaptureAPIClient(authHeader *string) (string, *http.Client, func()) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/tasks/file_anonymization" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		*authHeader = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"result":"ANON"}`))
 	}))
 	return server.URL, server.Client(), server.Close
 }

@@ -119,6 +119,38 @@ func TestValidateDoctorPassesForHealthySecretAndAPI(t *testing.T) {
 	}
 }
 
+func TestValidateDoctorTrimsSecretAndPartnerIDHeaders(t *testing.T) {
+	var gotAuth string
+	var gotPartnerID string
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/tasks/anonymization_fields" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		gotAuth = r.Header.Get("Authorization")
+		gotPartnerID = r.Header.Get("partner-id")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	cfg := buildDoctorConfig(t, server.URL)
+	cfg.APIPartnerID = " 70bd3a91-0000-0000-0000-000000000000 "
+
+	err := ValidateDoctor(cfg, DoctorDeps{
+		HTTPClient:    server.Client(),
+		SecretChecker: fakeSecretChecker{secret: "\r\ntoken\r\n"},
+	})
+	if err != nil {
+		t.Fatalf("expected doctor preflight to pass, got: %v", err)
+	}
+	if gotAuth != "token" {
+		t.Fatalf("unexpected Authorization header value %q", gotAuth)
+	}
+	if gotPartnerID != "70bd3a91-0000-0000-0000-000000000000" {
+		t.Fatalf("unexpected partner-id header %q", gotPartnerID)
+	}
+}
+
 func TestValidateDoctorFailsWhenSecretCheckerErrors(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 
 	"github.com/zalando/go-keyring"
@@ -11,6 +12,7 @@ const defaultService = "ai-anonymizer/api"
 
 var errSecretNotFound = keyring.ErrNotFound
 var ErrSecretNotFound = errors.New("secret not found")
+var uuidLikePattern = regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 type keyringClient interface {
 	Get(service, user string) (string, error)
@@ -46,10 +48,14 @@ func (c OSSecretChecker) HasSecret(partnerID string) (bool, error) {
 }
 
 func (c OSSecretChecker) GetSecret(partnerID string) (string, error) {
-	if strings.TrimSpace(partnerID) == "" {
+	normalizedPartnerID := strings.TrimSpace(partnerID)
+	if normalizedPartnerID == "" {
 		return "", errors.New("partner id is required")
 	}
-	secret, err := c.client.Get(c.service, partnerID)
+	if uuidLikePattern.MatchString(normalizedPartnerID) {
+		normalizedPartnerID = strings.ToLower(normalizedPartnerID)
+	}
+	secret, err := c.client.Get(c.service, normalizedPartnerID)
 	if err != nil {
 		if errors.Is(err, errSecretNotFound) {
 			return "", ErrSecretNotFound

@@ -69,6 +69,8 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	if strings.TrimSpace(secret) == "" {
 		return Result{}, errors.New("run: api secret was not found in OS secret store")
 	}
+	normalizedSecret := strings.TrimSpace(secret)
+	normalizedPartnerID := strings.TrimSpace(cfg.APIPartnerID)
 	auditSecret, err := deps.SecretGetter.GetSecret(cfg.AuditHMACKeyID)
 	if err != nil {
 		return Result{}, fmt.Errorf("run: audit key read failed: %w", err)
@@ -104,7 +106,7 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 		return Result{}, err
 	}
 
-	sanitized, err := callFileAnonymization(cfg, absPath, secret, deps.HTTPClient)
+	sanitized, err := callFileAnonymization(cfg, absPath, normalizedPartnerID, normalizedSecret, deps.HTTPClient)
 	if err != nil {
 		items[idx].Status = catalog.StatusFailed
 		_ = c.Save(items)
@@ -396,7 +398,7 @@ func validateNoReparsePoints(rootAbs, fileAbs string) error {
 	return nil
 }
 
-func callFileAnonymization(cfg config.Config, filePath string, secret string, httpClient *http.Client) ([]byte, error) {
+func callFileAnonymization(cfg config.Config, filePath string, partnerID string, secret string, httpClient *http.Client) ([]byte, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("run: open file failed: %w", err)
@@ -432,7 +434,7 @@ func callFileAnonymization(cfg config.Config, filePath string, secret string, ht
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Authorization", secret)
-	req.Header.Set("partner-id", cfg.APIPartnerID)
+	req.Header.Set("partner-id", partnerID)
 	req.Header.Set("fields", "anonymizer")
 
 	resp, err := client.Do(req)

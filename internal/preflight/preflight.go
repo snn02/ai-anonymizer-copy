@@ -105,6 +105,8 @@ func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
 	if strings.TrimSpace(secret) == "" {
 		return errors.New("preflight: api secret was not found in OS secret store")
 	}
+	normalizedSecret := strings.TrimSpace(secret)
+	normalizedPartnerID := strings.TrimSpace(cfg.APIPartnerID)
 
 	timeout := time.Duration(cfg.RequestTimeoutSec) * time.Second
 	if timeout <= 0 {
@@ -120,8 +122,8 @@ func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
 	if err != nil {
 		return fmt.Errorf("preflight: build api request: %w", err)
 	}
-	req.Header.Set("Authorization", secret)
-	req.Header.Set("partner-id", cfg.APIPartnerID)
+	req.Header.Set("Authorization", normalizedSecret)
+	req.Header.Set("partner-id", normalizedPartnerID)
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("preflight: api availability check failed: %w", err)
