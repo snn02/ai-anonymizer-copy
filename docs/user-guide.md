@@ -112,7 +112,14 @@ security add-generic-password -U -s "ai-anonymizer/api" -a "audit-hmac-v1" -w "<
 
 ### Шаг 1. Подготовьте Config Файл
 
-Создайте `config.yaml` по образцу `config.example.yaml` и заполните минимум:
+Рекомендуемый вариант:
+1. возьмите `config.example.yaml` в корне проекта;
+2. заполните значения под ваше окружение;
+3. оставьте файл с именем `config.example.yaml`, если хотите запуск без `--config`.
+
+Если хотите отдельный файл (`config.yaml`, `config.prod.yaml` и т.п.), это нормально, но тогда в командах указывайте `--config <путь>`.
+
+Минимальный состав полей:
 
 ```yaml
 paths:
@@ -137,13 +144,35 @@ audit:
 
 ### Шаг 2. Запуск С Компактными Командами
 
+Вариант A: файл в дефолтном месте и с дефолтным именем `./config.example.yaml` (можно без `--config`).
+
+Если у вас `anonym.exe`:
+
+```powershell
+C:\tools\anonym\anonym.exe doctor
+C:\tools\anonym\anonym.exe scan
+C:\tools\anonym\anonym.exe list
+C:\tools\anonym\anonym.exe run <id|path>
+```
+
+Если запуск через исходники:
+
+```powershell
+go run ./cmd/anonym doctor
+go run ./cmd/anonym scan
+go run ./cmd/anonym list
+go run ./cmd/anonym run <id|path>
+```
+
+Вариант B: отдельный config-файл (нужен `--config`).
+
 Если у вас `anonym.exe`:
 
 ```powershell
 C:\tools\anonym\anonym.exe doctor --config C:\work\my-ai-project\config.yaml
 C:\tools\anonym\anonym.exe scan --config C:\work\my-ai-project\config.yaml
 C:\tools\anonym\anonym.exe list --config C:\work\my-ai-project\config.yaml
-C:\tools\anonym\anonym.exe run <id> --config C:\work\my-ai-project\config.yaml
+C:\tools\anonym\anonym.exe run <id|path> --config C:\work\my-ai-project\config.yaml
 ```
 
 Если запуск через исходники:
@@ -152,7 +181,7 @@ C:\tools\anonym\anonym.exe run <id> --config C:\work\my-ai-project\config.yaml
 go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml
 go run ./cmd/anonym scan --config C:\work\my-ai-project\config.yaml
 go run ./cmd/anonym list --config C:\work\my-ai-project\config.yaml
-go run ./cmd/anonym run <id> --config C:\work\my-ai-project\config.yaml
+go run ./cmd/anonym run <id|path> --config C:\work\my-ai-project\config.yaml
 ```
 
 ## Override Параметров: Когда И Как Делать
@@ -186,8 +215,9 @@ go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --api-base
 ## Диагностика Config Режима
 
 1. Если `--config` указан явно и файл не найден, команда завершится ошибкой загрузки файла.
-2. Если файл не указан явно и дефолтный путь отсутствует, runtime продолжит с env/CLI.
-3. При битом YAML команда завершится явной ошибкой парсинга конфига.
+2. Если `--config` не указан, runtime ищет `./config.example.yaml` в текущей рабочей папке.
+3. Если файл из п.2 отсутствует, runtime продолжит с env/CLI.
+4. При битом YAML команда завершится явной ошибкой парсинга конфига.
 
 ## Важные Ограничения V1
 
