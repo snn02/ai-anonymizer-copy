@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
 
 	"ai-anonymizer/internal/config"
 	"ai-anonymizer/internal/secrets"
@@ -102,10 +103,10 @@ func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
 		}
 		return fmt.Errorf("preflight: secret store check failed: %w", err)
 	}
-	if strings.TrimSpace(secret) == "" {
+	normalizedSecret := sanitizeHeaderValue(secret)
+	if normalizedSecret == "" {
 		return errors.New("preflight: api secret was not found in OS secret store")
 	}
-	normalizedSecret := strings.TrimSpace(secret)
 	normalizedPartnerID := strings.TrimSpace(cfg.APIPartnerID)
 
 	timeout := time.Duration(cfg.RequestTimeoutSec) * time.Second
@@ -134,6 +135,19 @@ func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
 	}
 
 	return nil
+}
+
+func sanitizeHeaderValue(v string) string {
+	trimmed := strings.TrimSpace(v)
+	return strings.Map(func(r rune) rune {
+		if r == unicode.ReplacementChar {
+			return -1
+		}
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, trimmed)
 }
 
 func validateBoundary(rawPath, workspacePath string) error {

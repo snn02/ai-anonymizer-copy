@@ -151,6 +151,27 @@ func TestValidateDoctorTrimsSecretAndPartnerIDHeaders(t *testing.T) {
 	}
 }
 
+func TestValidateDoctorRemovesControlCharsFromSecretHeader(t *testing.T) {
+	var gotAuth string
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	cfg := buildDoctorConfig(t, server.URL)
+	err := ValidateDoctor(cfg, DoctorDeps{
+		HTTPClient:    server.Client(),
+		SecretChecker: fakeSecretChecker{secret: "\x00tok\ren\n"},
+	})
+	if err != nil {
+		t.Fatalf("expected doctor preflight to pass, got: %v", err)
+	}
+	if gotAuth != "token" {
+		t.Fatalf("unexpected Authorization header value %q", gotAuth)
+	}
+}
+
 func TestValidateDoctorFailsWhenSecretCheckerErrors(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

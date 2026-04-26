@@ -427,6 +427,48 @@ func TestExecuteTrimsAuthorizationHeaderValue(t *testing.T) {
 	}
 }
 
+func TestExecuteRemovesControlCharsFromAuthorizationHeaderValue(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.AuditHMACKeyID = "audit-hmac-v1"
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("PII"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotAuth string
+	serverURL, serverClient, cleanup := newHeaderCaptureAPIClient(&gotAuth)
+	defer cleanup()
+	cfg.APIBaseURL = serverURL
+	cfg.APIAllowedHosts = []string{"127.0.0.1", "localhost"}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		HTTPClient: serverClient,
+		SecretGetter: mapSecretGetter{
+			values: map[string]string{
+				cfg.APIPartnerID:   "\x00api-\rse\ncret\x7f",
+				cfg.AuditHMACKeyID: "audit-secret",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if gotAuth != "api-secret" {
+		t.Fatalf("unexpected Authorization header value %q", gotAuth)
+	}
+}
+
 func baseConfig(t *testing.T) config.Config {
 	t.Helper()
 

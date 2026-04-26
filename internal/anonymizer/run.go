@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"ai-anonymizer/internal/audit"
 	"ai-anonymizer/internal/catalog"
@@ -66,10 +67,10 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("run: secret store read failed: %w", err)
 	}
-	if strings.TrimSpace(secret) == "" {
+	normalizedSecret := sanitizeHeaderValue(secret)
+	if normalizedSecret == "" {
 		return Result{}, errors.New("run: api secret was not found in OS secret store")
 	}
-	normalizedSecret := strings.TrimSpace(secret)
 	normalizedPartnerID := strings.TrimSpace(cfg.APIPartnerID)
 	auditSecret, err := deps.SecretGetter.GetSecret(cfg.AuditHMACKeyID)
 	if err != nil {
@@ -495,4 +496,17 @@ func writeOutput(outputRoot string, item catalog.Item, data []byte) (string, err
 		return "", fmt.Errorf("run: write output failed: %w", err)
 	}
 	return outPath, nil
+}
+
+func sanitizeHeaderValue(v string) string {
+	trimmed := strings.TrimSpace(v)
+	return strings.Map(func(r rune) rune {
+		if r == unicode.ReplacementChar {
+			return -1
+		}
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, trimmed)
 }
