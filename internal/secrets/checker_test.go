@@ -81,3 +81,17 @@ func TestOSSecretCheckerGetSecretReturnsValue(t *testing.T) {
 		t.Fatalf("unexpected token %q", got)
 	}
 }
+
+func TestOSSecretCheckerGetSecretReturnsNotFoundSentinel(t *testing.T) {
+	checker := OSSecretChecker{
+		service: "ai-anonymizer/api",
+		client: fakeKeyringClient{
+			err: errSecretNotFound,
+		},
+	}
+
+	_, err := checker.GetSecret("partner-1")
+	if !errors.Is(err, ErrSecretNotFound) {
+		t.Fatalf("expected ErrSecretNotFound, got %v", err)
+	}
+}

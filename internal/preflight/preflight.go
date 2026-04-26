@@ -6,22 +6,26 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"ai-anonymizer/internal/config"
+	"ai-anonymizer/internal/secrets"
 )
 
 type SecretChecker interface {
-	HasSecret(partnerID string) (bool, error)
+	GetSecret(partnerID string) (string, error)
 }
 
 type DoctorDeps struct {
 	HTTPClient    *http.Client
 	SecretChecker SecretChecker
 }
+
+var uuidPattern = regexp.MustCompile(`(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
 func Validate(cfg config.Config) error {
 	return ValidateRuntime(cfg)
@@ -48,6 +52,9 @@ func ValidateRuntime(cfg config.Config) error {
 	}
 	if strings.TrimSpace(cfg.AuditHMACKeyID) == "" {
 		return errors.New("preflight: audit.hmac_key_id is required")
+	}
+	if strings.TrimSpace(cfg.APIPartnerID) != "" && !uuidPattern.MatchString(strings.TrimSpace(cfg.APIPartnerID)) {
+		return errors.New("preflight: api.partner_id must be a valid UUID")
 	}
 	return nil
 }
@@ -84,16 +91,18 @@ func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
 	if strings.TrimSpace(cfg.APIPartnerID) == "" {
 		return errors.New("preflight: api.partner_id is required for doctor")
 	}
-
 	checker := deps.SecretChecker
 	if checker == nil {
 		return errors.New("preflight: secret checker is not configured")
 	}
-	ok, err := checker.HasSecret(cfg.APIPartnerID)
+	secret, err := checker.GetSecret(cfg.APIPartnerID)
 	if err != nil {
+		if errors.Is(err, secrets.ErrSecretNotFound) {
+			return errors.New("preflight: api secret was not found in OS secret store")
+		}
 		return fmt.Errorf("preflight: secret store check failed: %w", err)
 	}
-	if !ok {
+	if strings.TrimSpace(secret) == "" {
 		return errors.New("preflight: api secret was not found in OS secret store")
 	}
 
@@ -111,6 +120,8 @@ func ValidateDoctor(cfg config.Config, deps DoctorDeps) error {
 	if err != nil {
 		return fmt.Errorf("preflight: build api request: %w", err)
 	}
+	req.Header.Set("Authorization", secret)
+	req.Header.Set("partner-id", cfg.APIPartnerID)
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("preflight: api availability check failed: %w", err)

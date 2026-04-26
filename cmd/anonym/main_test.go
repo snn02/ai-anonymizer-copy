@@ -16,10 +16,12 @@ import (
 	"ai-anonymizer/internal/preflight"
 )
 
+const testPartnerUUID = "70bd3a91-0000-0000-0000-000000000000"
+
 type alwaysTrueSecretChecker struct{}
 
-func (alwaysTrueSecretChecker) HasSecret(partnerID string) (bool, error) {
-	return true, nil
+func (alwaysTrueSecretChecker) GetSecret(partnerID string) (string, error) {
+	return "token", nil
 }
 
 type staticSecretGetter struct {
@@ -63,7 +65,7 @@ func TestRunDoctorSuccess(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &out, &out)
@@ -97,7 +99,7 @@ func TestRunScanAndListFlow(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", "https://api.company.local",
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "api.company.local",
 		"--max-parallel-runs", "1",
 	}, &scanOut, &scanOut)
@@ -115,7 +117,7 @@ func TestRunScanAndListFlow(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", "https://api.company.local",
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "api.company.local",
 		"--max-parallel-runs", "1",
 	}, &listOut, &listOut)
@@ -153,7 +155,7 @@ func TestRunExecutesExplicitSendByID(t *testing.T) {
 		if got := r.Header.Get("Authorization"); got == "" {
 			t.Fatalf("expected Authorization header")
 		}
-		if got := r.Header.Get("partner-id"); got != "partner-1" {
+		if got := r.Header.Get("partner-id"); got != testPartnerUUID {
 			t.Fatalf("unexpected partner-id header: %q", got)
 		}
 		if got := r.Header.Get("fields"); got == "" {
@@ -193,7 +195,7 @@ func TestRunExecutesExplicitSendByID(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &scanOut, &scanOut); err != nil {
@@ -208,7 +210,7 @@ func TestRunExecutesExplicitSendByID(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &runOut, &runOut)
@@ -266,7 +268,7 @@ func TestRunFuzzyAmbiguousRequiresExplicitID(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &scanOut, &scanOut); err != nil {
@@ -281,7 +283,7 @@ func TestRunFuzzyAmbiguousRequiresExplicitID(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &runOut, &runOut)
@@ -327,7 +329,7 @@ func TestRunMarksCatalogFailedWhenAPIFails(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &scanOut, &scanOut); err != nil {
@@ -342,7 +344,7 @@ func TestRunMarksCatalogFailedWhenAPIFails(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &runOut, &runOut)
@@ -357,7 +359,7 @@ func TestRunMarksCatalogFailedWhenAPIFails(t *testing.T) {
 		"--output-path", output,
 		"--workspace-path", workspace,
 		"--api-base-url", server.URL,
-		"--api-partner-id", "partner-1",
+		"--api-partner-id", testPartnerUUID,
 		"--allowed-hosts", "127.0.0.1,localhost",
 		"--max-parallel-runs", "1",
 	}, &listOut, &listOut); err != nil {

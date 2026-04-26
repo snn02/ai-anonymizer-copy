@@ -212,3 +212,63 @@
 - Тип: изменение
 - Описание: расширен раздел секретов в user-guide: добавлены пошаговые инструкции для Windows/Linux/macOS, пояснение по `audit.hmac_key_id` и источник `HMAC`-секрета, а также команда генерации значения через PowerShell.
 - Ссылка: `../../user-guide.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: выполнена контрактная синхронизация документации `v1` для API anonymization: в `plan.md` зафиксированы обязательные заголовки `POST /v1/tasks/file_anonymization` (`Authorization`, `partner-id`, `fields=anonymizer`), формат `multipart/form-data` и ограничения параметризации заголовков в runtime `v1`.
+- Ссылка: `plan.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: обновлены пользовательские и тестовые сценарии `v1`: добавлены проверяемые критерии UUID-формата `api.partner_id`, явные проверки обязательных заголовков в `run` и auth/header-контекста preflight-проверки `anonymization_fields`.
+- Ссылка: `../../user-scenarios.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: исправлен user-guide под production-контракт API: примеры `api.partner_id` переведены на UUID-формат (вместо `partner-1`), добавлено сопоставление входных данных `ключ/партнер/пользователь` к заголовкам `Authorization/partner-id/user-id` и зафиксированы ограничения runtime `v1` по `fields/user-id/tags-numeration`.
+- Ссылка: `../../user-guide.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: переписан технический контракт конфигурации `v1` (`docs/technical/configuration.md`) в синхронизации с runtime: обновлены фактические defaults/пути, выделен раздел обязательных заголовков API-вызова и явно отмечены заголовки, не параметризуемые через CLI/env/config в `v1`.
+- Ссылка: `../../technical/configuration.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: проверена актуальность task-контрактов относительно production OpenAPI (`/v1/tasks/file_anonymization`, `/v1/tasks/anonymization_fields`, `/v1/tasks/anonymization_file_types`): структура обязательных заголовков и форматы тела/авторизации совпадают с локальной спецификацией.
+- Ссылка: `../../openapi.json`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: сформирован post-release feature-пакет OpenSpec `v1-i3-doctor-api-header-alignment` для кодовых правок preflight: выравнивание заголовков `doctor` с контрактом API (`Authorization`, `partner-id`), UUID-валидация `api.partner_id`, security DoD и тестовый контур.
+- Ссылка: `../../../openspec/archive/v1-i3-doctor-api-header-alignment/proposal.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: реализованы кодовые правки `v1-i3` в preflight/doctor: API-check `GET /v1/tasks/anonymization_fields` теперь отправляет `Authorization` и `partner-id`; добавлена runtime-валидация UUID для `api.partner_id`; секрет для preflight берется через `GetSecret` из OS secret store без plaintext fallback.
+- Ссылка: `../../../openspec/archive/v1-i3-doctor-api-header-alignment/tasks.md`
+
+### 2026-04-26
+
+- Тип: реакция
+- Описание: подтверждено тестами `v1-i3`: обновлены проверки `internal/preflight/doctor_test.go` (headers, UUID validation, missing secret behavior), адаптирован `cmd/anonym/main_test.go` под новый контракт secret checker; полный прогон `go test ./...` зеленый.
+- Ссылка: `../../test-scenarios.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: feature-пакет `v1-i3-doctor-api-header-alignment` закрыт и перенесен в `openspec/archive/`; индекс `docs/versions/v1/openspec.md` синхронизирован.
+- Ссылка: `openspec.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: по техлид-ревью доработан `v1-i3`: в preflight добавлен детерминированный маппинг `secret not found` в стабильную бизнес-ошибку, усилен тест на источник значения `Authorization`, и UUID-валидация `api.partner_id` унифицирована в общем runtime-пути (`scan/list/run/doctor`).
+- Ссылка: `../../test-scenarios.md`

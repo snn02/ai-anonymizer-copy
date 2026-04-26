@@ -59,6 +59,11 @@
   - `POST /v1/tasks/file_anonymization`
   - `GET /v1/tasks/anonymization_file_types`
   - `GET /v1/tasks/anonymization_fields`
+- Контракт `POST /v1/tasks/file_anonymization` в `v1`:
+  - обязательные заголовки: `Authorization`, `partner-id` (UUID), `fields=anonymizer`;
+  - optional заголовки: `tags-numeration`, `user-id` (UUID);
+  - формат тела: `multipart/form-data` с обязательным полем `file`.
+- `api.partner_id` валидируется в UUID-формате единообразно в runtime-путях `scan/list/run/doctor`.
 - `scan` только обнаруживает, не отправляет в API.
 - `run <id|path>` запускает отправку явно по команде пользователя.
 
@@ -83,6 +88,7 @@
   - только HTTPS;
   - проверка TLS-сертификата;
   - allowlist допустимых host/base-url для API.
+  - `doctor` проверяет доступность API с теми же auth/header-инвариантами, которые используются в runtime-вызовах.
 - Секреты в v1:
   - хранятся в OS secret store;
   - запрещен fallback в plaintext-конфиг;
@@ -94,6 +100,9 @@
 - Контракт результата анонимизации в v1:
   - результат `file_anonymization` обрабатывается через адаптер форматов ответа;
   - адаптер покрывается интеграционными тестами на реальных/эталонных ответах.
+- Ограничения параметризации заголовков в `v1`:
+  - `fields` фиксируется в `anonymizer` (без CLI/env override);
+  - `user-id` не отправляется из CLI runtime `v1`.
 - Fuzzy-поиск в `run`:
   - автозапуск только при одном совпадении;
   - при нескольких совпадениях требуется явный выбор `id`.

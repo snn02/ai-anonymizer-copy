@@ -73,3 +73,12 @@
   4. обязательная запись результата release-checklist в `docs/versions/v1/action-log.md`.
 - Причина: исключить повторение разрыва между требованиями `plan.md` и задачами OpenSpec.
 - Влияние: `docs/versions/v1/openspec.md`, `openspec/changes/v1-i2-run-api-adapter/proposal.md`, `docs/versions/v1/action-log.md`.
+
+### 2026-04-26 / d-010
+
+- Решение: для `v1` закрепить контрактную синхронизацию API-вызова `file_anonymization` как обязательный критерий документации и тестов:
+  1. `api.partner_id` и `partner-id` всегда указываются в UUID-формате;
+  2. обязательные заголовки вызова фиксируются явно (`Authorization`, `partner-id`, `fields=anonymizer`);
+  3. примеры в user-guide не должны использовать невалидные placeholder-значения вместо UUID.
+- Причина: устранить расхождения между пользовательской документацией, техническим контрактом и runtime-проверками при вызове production API.
+- Влияние: `docs/technical/configuration.md`, `docs/user-guide.md`, `docs/versions/v1/plan.md`, `docs/user-scenarios.md`, `docs/test-scenarios.md`, `docs/versions/v1/action-log.md`.

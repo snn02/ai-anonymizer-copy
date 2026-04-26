@@ -18,28 +18,40 @@
 
 Если есть конфликт, применяется источник с более высоким приоритетом.
 
-## Таблица параметров
+## Таблица параметров runtime v1
 
 | Ключ | Тип | Обяз. | Default | Пример | Env |
 |---|---|---|---|---|---|
 | `paths.raw_path` | string (abs path) | да | - | `D:/secure-raw` | `ANON_RAW_PATH` |
 | `paths.output_path` | string (abs path) | да | - | `C:/work/project/anonymized` | `ANON_OUTPUT_PATH` |
+| `paths.workspace_path` | string (abs path) | да | - | `C:/work/project` | `ANON_WORKSPACE_PATH` |
 | `api.base_url` | string (https url) | да | - | `https://api.company.local` | `ANON_API_BASE_URL` |
 | `api.partner_id` | string (uuid) | да | - | `00000000-0000-0000-0000-000000000000` | `ANON_API_PARTNER_ID` |
-| `api.fields` | string | да | `anonymizer` | `anonymizer` | `ANON_API_FIELDS` |
-| `api.tags` | string list | нет | `[]` | `["fio","phone"]` | `ANON_API_TAGS` |
-| `api.tags_numeration` | int (`0|1`) | нет | `1` | `1` | `ANON_API_TAGS_NUMERATION` |
 | `limits.max_file_size_mb` | int | да | `25` | `50` | `ANON_MAX_FILE_SIZE_MB` |
 | `limits.max_pages` | int | да | `300` | `500` | `ANON_MAX_PAGES` |
-| `limits.request_timeout_sec` | int | да | `120` | `180` | `ANON_REQUEST_TIMEOUT_SEC` |
+| `limits.request_timeout_sec` | int | да | `5` | `15` | `ANON_REQUEST_TIMEOUT_SEC` |
 | `limits.max_parallel_runs` | int | да | `1` | `1` | `ANON_MAX_PARALLEL_RUNS` |
 | `security.allowed_hosts` | string list | да | `[]` | `["api.company.local"]` | `ANON_ALLOWED_HOSTS` |
 | `security.require_tls_verify` | bool | да | `true` | `true` | `ANON_REQUIRE_TLS_VERIFY` |
 | `audit.retention_days` | int | да | `30` | `90` | `ANON_AUDIT_RETENTION_DAYS` |
-| `audit.hmac_key_id` | string | да | `default` | `audit-hmac-v1` | `ANON_AUDIT_HMAC_KEY_ID` |
-| `catalog.db_path` | string (abs path) | нет | `<workspace>/.anonym/catalog.db` | `C:/work/project/.anonym/catalog.db` | `ANON_CATALOG_DB_PATH` |
-| `logging.level` | enum | нет | `info` | `debug` | `ANON_LOG_LEVEL` |
-| `logging.format` | enum | нет | `json` | `json` | `ANON_LOG_FORMAT` |
+| `audit.hmac_key_id` | string | да | `audit-hmac-v1` | `audit-hmac-v1` | `ANON_AUDIT_HMAC_KEY_ID` |
+| `catalog.path` | string (abs path) | нет | `<workspace>/.anonym/catalog.json` | `C:/work/project/.anonym/catalog.json` | - |
+| `audit.path` | string (abs path) | нет | `<workspace>/.anonym/audit.log` | `C:/work/project/.anonym/audit.log` | - |
+
+## Контракт вызова API для `run` (v1)
+
+Обязательные заголовки при `POST /v1/tasks/file_anonymization`:
+1. `Authorization` (значение берется из OS secret store по `api.partner_id`).
+2. `partner-id` (`api.partner_id`, строго UUID).
+3. `fields` (в runtime v1 фиксировано значение `anonymizer`).
+
+Опциональные заголовки:
+1. `tags-numeration` (`0|1`).
+2. `user-id` (UUID).
+
+Важно для v1 runtime:
+1. `tags`, `tags-numeration` и `user-id` не настраиваются через CLI/config/env.
+2. `fields` не настраивается через CLI/config/env и отправляется как фиксированное `anonymizer`.
 
 ## Валидация и security-ограничения
 
@@ -54,9 +66,8 @@
 
 ## Формат переменных окружения
 
-- Для list-полей (`allowed_hosts`, `tags`) использовать `,`:
+- Для list-полей (`allowed_hosts`) использовать `,`:
   - `ANON_ALLOWED_HOSTS=api.company.local,api.backup.local`
-  - `ANON_API_TAGS=fio,phone,email`
 
 ## Профили окружения
 

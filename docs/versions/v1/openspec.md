@@ -2,7 +2,7 @@
 
 ## Статус
 
-`v1` завершена. Feature-пакеты итераций перенесены в архив `openspec/archive/`.
+`v1` завершена. Post-release итерация `v1-i3` закрыта и перенесена в архив.
 
 ## Где лежат артефакты
 
@@ -23,6 +23,10 @@
   - `../../../openspec/archive/v1-i2-run-api-adapter/proposal.md`
   - `../../../openspec/archive/v1-i2-run-api-adapter/tasks.md`
   - `../../../openspec/archive/v1-i2-run-api-adapter/specs/v1-i2-core/spec.md`
+- `v1-i3-doctor-api-header-alignment`:
+  - `../../../openspec/archive/v1-i3-doctor-api-header-alignment/proposal.md`
+  - `../../../openspec/archive/v1-i3-doctor-api-header-alignment/tasks.md`
+  - `../../../openspec/archive/v1-i3-doctor-api-header-alignment/specs/v1-i3-core/spec.md`
 
 ## Подготовленные следующие итерации
 

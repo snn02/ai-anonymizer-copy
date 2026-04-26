@@ -10,6 +10,7 @@ import (
 const defaultService = "ai-anonymizer/api"
 
 var errSecretNotFound = keyring.ErrNotFound
+var ErrSecretNotFound = errors.New("secret not found")
 
 type keyringClient interface {
 	Get(service, user string) (string, error)
@@ -36,7 +37,7 @@ func NewOSSecretChecker() OSSecretChecker {
 func (c OSSecretChecker) HasSecret(partnerID string) (bool, error) {
 	secret, err := c.GetSecret(partnerID)
 	if err != nil {
-		if errors.Is(err, errSecretNotFound) {
+		if errors.Is(err, ErrSecretNotFound) {
 			return false, nil
 		}
 		return false, err
@@ -50,6 +51,9 @@ func (c OSSecretChecker) GetSecret(partnerID string) (string, error) {
 	}
 	secret, err := c.client.Get(c.service, partnerID)
 	if err != nil {
+		if errors.Is(err, errSecretNotFound) {
+			return "", ErrSecretNotFound
+		}
 		return "", err
 	}
 	return secret, nil

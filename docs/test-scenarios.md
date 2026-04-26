@@ -24,6 +24,8 @@
 - CLI валидирует конфигурацию;
 - CLI применяет приоритет конфигурации: flags > env > file;
 - CLI проверяет доступность API и наличие секретов;
+- runtime валидирует, что `api.partner_id` имеет UUID-формат единообразно для `scan/list/run/doctor`;
+- проверка доступности `GET /v1/tasks/anonymization_fields` выполняется с auth/header-контекстом runtime (`Authorization`, `partner-id`);
 - CLI блокирует небезопасные конфигурации boundary/ACL;
 - ошибки возвращаются в понятном виде.
 
@@ -112,7 +114,8 @@
 
 Проверки:
 - `run` отправляет файл только при явной команде пользователя;
-- запрос уходит в `POST /v1/tasks/file_anonymization` с обязательными заголовками;
+- запрос уходит в `POST /v1/tasks/file_anonymization` с обязательными заголовками `Authorization`, `partner-id` (UUID), `fields=anonymizer`;
+- `Content-Type` запроса соответствует `multipart/form-data` и содержит обязательное поле `file`;
 - ответ API нормализуется adapter-слоем;
 - каталог проходит переходы `scanned -> sent -> succeeded/failed`;
 - результат сохраняется в `output_path` с техническим PII-safe именем;

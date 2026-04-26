@@ -151,3 +151,13 @@ func TestValidateFailsWhenAuditHMACKeyIDIsEmpty(t *testing.T) {
 		t.Fatal("expected error for empty audit.hmac_key_id")
 	}
 }
+
+func TestValidateFailsWhenPartnerIDIsNotUUID(t *testing.T) {
+	cfg := buildSafeRuntimeConfig(t)
+	cfg.APIPartnerID = "partner-1"
+
+	err := Validate(cfg)
+	if err == nil {
+		t.Fatal("expected error for non-uuid api.partner_id")
+	}
+}

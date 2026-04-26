@@ -37,7 +37,7 @@
 2. `--output-path` или `ANON_OUTPUT_PATH`
 3. `--workspace-path` или `ANON_WORKSPACE_PATH`
 4. `--api-base-url` или `ANON_API_BASE_URL` (только `https`)
-5. `--api-partner-id` или `ANON_API_PARTNER_ID`
+5. `--api-partner-id` или `ANON_API_PARTNER_ID` (строго UUID)
 6. `--allowed-hosts` или `ANON_ALLOWED_HOSTS`
 7. `--max-parallel-runs 1` (или `ANON_MAX_PARALLEL_RUNS=1`)
 
@@ -50,9 +50,21 @@
 
 Секреты должны храниться только в OS secret store (не в `yaml`, не в `.env`).
 
+### как сопоставить данные от разработчика api
+
+Если вам передали:
+1. `ключ` — это значение для заголовка `Authorization` (хранится как секрет в keyring).
+2. `партнер` — это `partner-id` и `api.partner_id` (должен быть UUID).
+3. `пользователь` — это `user-id` (опциональный UUID заголовок).
+
+Важно для текущего runtime `v1`:
+1. CLI отправляет `Authorization`, `partner-id`, `fields=anonymizer`.
+2. CLI не отправляет `user-id` и `tags-numeration`.
+3. `user-id` можно использовать только в ручном HTTP-вызове или в следующей версии runtime.
+
 Общий шаблон:
 1. `service`: `ai-anonymizer/api`
-2. `account`: значение `api.partner_id` (например, `partner-1`)  
+2. `account`: значение `api.partner_id` (например, `da315a9a-0000-0000-0000-000000000000`)  
    `value`: API secret/token
 3. `account`: значение `audit.hmac_key_id` (обычно `audit-hmac-v1`)  
    `value`: секрет для HMAC аудита
@@ -73,7 +85,7 @@
 #### windows (credential manager)
 
 ```powershell
-cmdkey /generic:"ai-anonymizer/api:partner-1" /user:"partner-1" /pass:"<API_TOKEN>"
+cmdkey /generic:"ai-anonymizer/api:<partner_uuid>" /user:"<partner_uuid>" /pass:"<API_TOKEN>"
 cmdkey /generic:"ai-anonymizer/api:audit-hmac-v1" /user:"audit-hmac-v1" /pass:"<HMAC_SECRET>"
 ```
 
@@ -86,28 +98,28 @@ cmdkey /list | findstr "ai-anonymizer/api"
 #### linux (secret service / gnome keyring)
 
 ```bash
-echo -n "<API_TOKEN>" | secret-tool store --label="ai-anonymizer api partner" service "ai-anonymizer/api" username "partner-1"
+echo -n "<API_TOKEN>" | secret-tool store --label="ai-anonymizer api partner" service "ai-anonymizer/api" username "<partner_uuid>"
 echo -n "<HMAC_SECRET>" | secret-tool store --label="ai-anonymizer audit hmac" service "ai-anonymizer/api" username "audit-hmac-v1"
 ```
 
 Проверка:
 
 ```bash
-secret-tool lookup service "ai-anonymizer/api" username "partner-1"
+secret-tool lookup service "ai-anonymizer/api" username "<partner_uuid>"
 secret-tool lookup service "ai-anonymizer/api" username "audit-hmac-v1"
 ```
 
 #### macos (keychain)
 
 ```bash
-security add-generic-password -U -s "ai-anonymizer/api" -a "partner-1" -w "<API_TOKEN>"
+security add-generic-password -U -s "ai-anonymizer/api" -a "<partner_uuid>" -w "<API_TOKEN>"
 security add-generic-password -U -s "ai-anonymizer/api" -a "audit-hmac-v1" -w "<HMAC_SECRET>"
 ```
 
 Проверка:
 
 ```bash
-security find-generic-password -s "ai-anonymizer/api" -wa "partner-1"
+security find-generic-password -s "ai-anonymizer/api" -wa "<partner_uuid>"
 security find-generic-password -s "ai-anonymizer/api" -wa "audit-hmac-v1"
 ```
 
@@ -132,7 +144,7 @@ C:\tools\anonym\anonym.exe doctor `
   --output-path C:\work\my-ai-project\anonymized `
   --workspace-path C:\work\my-ai-project `
   --api-base-url https://api.company.local `
-  --api-partner-id partner-1 `
+  --api-partner-id <partner_uuid> `
   --allowed-hosts api.company.local `
   --max-file-size-mb 25 `
   --max-pages 300 `
@@ -145,11 +157,11 @@ C:\tools\anonym\anonym.exe doctor `
 ### рабочий цикл
 
 ```powershell
-C:\tools\anonym\anonym.exe scan --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+C:\tools\anonym\anonym.exe scan --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id <partner_uuid> --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 
-C:\tools\anonym\anonym.exe list --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+C:\tools\anonym\anonym.exe list --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id <partner_uuid> --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 
-C:\tools\anonym\anonym.exe run <id> --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id partner-1 --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+C:\tools\anonym\anonym.exe run <id> --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id <partner_uuid> --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 ```
 
 ## вариант 2: вы сделали `git clone`
@@ -173,7 +185,7 @@ go run ./cmd/anonym doctor `
   --output-path C:\work\my-ai-project\anonymized `
   --workspace-path C:\work\my-ai-project `
   --api-base-url https://api.company.local `
-  --api-partner-id partner-1 `
+  --api-partner-id <partner_uuid> `
   --allowed-hosts api.company.local `
   --max-file-size-mb 25 `
   --max-pages 300 `
@@ -198,7 +210,7 @@ $env:ANON_RAW_PATH="D:\secure-raw"
 $env:ANON_OUTPUT_PATH="C:\work\my-ai-project\anonymized"
 $env:ANON_WORKSPACE_PATH="C:\work\my-ai-project"
 $env:ANON_API_BASE_URL="https://api.company.local"
-$env:ANON_API_PARTNER_ID="partner-1"
+$env:ANON_API_PARTNER_ID="<partner_uuid>"
 $env:ANON_ALLOWED_HOSTS="api.company.local"
 $env:ANON_MAX_FILE_SIZE_MB="25"
 $env:ANON_MAX_PAGES="300"
@@ -220,11 +232,13 @@ go run ./cmd/anonym run <id>
 ## важные замечания по v1
 
 1. `run` в `v1` не поддерживает CLI override-флаги `--fields`, `--tags`, `--tags-numeration`.
-2. Секреты из `config.yaml` и plaintext env не используются как fallback.
-3. Аудит пишется в `<workspace>/.anonym/audit.log` в формате JSONL:
+2. В `v1` заголовок `fields` отправляется фиксированно как `anonymizer`.
+3. В `v1` заголовок `user-id` не отправляется из CLI runtime.
+4. Секреты из `config.yaml` и plaintext env не используются как fallback.
+5. Аудит пишется в `<workspace>/.anonym/audit.log` в формате JSONL:
    - `file_id` хранится только как HMAC;
    - исходный raw-файл и секреты в лог не пишутся.
-4. `config.example.yaml` используйте как шаблон и чек-лист параметров; для надежного запуска в `v1` задавайте параметры через `flags/env`.
+6. `config.example.yaml` используйте как шаблон и чек-лист параметров; для надежного запуска в `v1` задавайте параметры через `flags/env`.
 
 ## быстрый чек-лист перед началом
 

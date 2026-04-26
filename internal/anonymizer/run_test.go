@@ -405,7 +405,7 @@ func baseConfig(t *testing.T) config.Config {
 		CatalogPath:        filepath.Join(workspace, ".anonym", "catalog.json"),
 		AuditPath:          filepath.Join(workspace, ".anonym", "audit.log"),
 		APIBaseURL:         "https://api.company.local",
-		APIPartnerID:       "partner-1",
+		APIPartnerID:       "70bd3a91-0000-0000-0000-000000000000",
 		APIAllowedHosts:    []string{"api.company.local"},
 		RequestTimeoutSec:  5,
 		MaxFileSizeMB:      25,
