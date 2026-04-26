@@ -2,7 +2,7 @@
 
 ## Статус
 
-`v1` завершена. Post-release итерация `v1-i3` закрыта и перенесена в архив.
+`v1` завершена для базового релизного scope. Открыта post-release итерация `v1-i4` для config-first runtime-конфигурации.
 
 ## Где лежат артефакты
 
@@ -11,7 +11,10 @@
 
 ## Активные feature-пакеты v1
 
-- нет.
+- `v1-i4-config-first-loading`:
+  - `../../../openspec/changes/v1-i4-config-first-loading/proposal.md`
+  - `../../../openspec/changes/v1-i4-config-first-loading/tasks.md`
+  - `../../../openspec/changes/v1-i4-config-first-loading/specs/v1-i4-core/spec.md`
 
 ## Закрытые feature-пакеты v1
 
@@ -30,7 +33,7 @@
 
 ## Подготовленные следующие итерации
 
-- нет; планирование следующих итераций ведется в рамках `v2`.
+- после `v1-i4` дополнительные post-release итерации не запланированы; дальнейшее планирование ведется в рамках `v2`.
 
 ## Правило
 

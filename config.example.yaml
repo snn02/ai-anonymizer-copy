@@ -10,7 +10,7 @@ paths:
   output_path: "C:/work/ai-anonymizer/anonymized"
 
 api:
-  base_url: "https://api.company.local"
+  base_url: "https://production-retrievals.ai.rarus-cloud.ru"
   partner_id: "00000000-0000-0000-0000-000000000000"
   fields: "anonymizer"
   tags: []
@@ -26,7 +26,7 @@ limits:
 
 security:
   allowed_hosts:
-    - "api.company.local"
+    - "production-retrievals.ai.rarus-cloud.ru"
   require_tls_verify: true
 
 audit:

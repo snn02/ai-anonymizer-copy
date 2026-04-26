@@ -25,13 +25,13 @@
 | `paths.raw_path` | string (abs path) | да | - | `D:/secure-raw` | `ANON_RAW_PATH` |
 | `paths.output_path` | string (abs path) | да | - | `C:/work/project/anonymized` | `ANON_OUTPUT_PATH` |
 | `paths.workspace_path` | string (abs path) | да | - | `C:/work/project` | `ANON_WORKSPACE_PATH` |
-| `api.base_url` | string (https url) | да | - | `https://api.company.local` | `ANON_API_BASE_URL` |
+| `api.base_url` | string (https url) | да | `https://production-retrievals.ai.rarus-cloud.ru` | `https://production-retrievals.ai.rarus-cloud.ru` | `ANON_API_BASE_URL` |
 | `api.partner_id` | string (uuid) | да | - | `00000000-0000-0000-0000-000000000000` | `ANON_API_PARTNER_ID` |
 | `limits.max_file_size_mb` | int | да | `25` | `50` | `ANON_MAX_FILE_SIZE_MB` |
 | `limits.max_pages` | int | да | `300` | `500` | `ANON_MAX_PAGES` |
 | `limits.request_timeout_sec` | int | да | `5` | `15` | `ANON_REQUEST_TIMEOUT_SEC` |
 | `limits.max_parallel_runs` | int | да | `1` | `1` | `ANON_MAX_PARALLEL_RUNS` |
-| `security.allowed_hosts` | string list | да | `[]` | `["api.company.local"]` | `ANON_ALLOWED_HOSTS` |
+| `security.allowed_hosts` | string list | да | `["production-retrievals.ai.rarus-cloud.ru"]` | `["production-retrievals.ai.rarus-cloud.ru"]` | `ANON_ALLOWED_HOSTS` |
 | `security.require_tls_verify` | bool | да | `true` | `true` | `ANON_REQUIRE_TLS_VERIFY` |
 | `audit.retention_days` | int | да | `30` | `90` | `ANON_AUDIT_RETENTION_DAYS` |
 | `audit.hmac_key_id` | string | да | `audit-hmac-v1` | `audit-hmac-v1` | `ANON_AUDIT_HMAC_KEY_ID` |
@@ -67,7 +67,7 @@
 ## Формат переменных окружения
 
 - Для list-полей (`allowed_hosts`) использовать `,`:
-  - `ANON_ALLOWED_HOSTS=api.company.local,api.backup.local`
+  - `ANON_ALLOWED_HOSTS=production-retrievals.ai.rarus-cloud.ru,api.backup.local`
 
 ## Профили окружения
 

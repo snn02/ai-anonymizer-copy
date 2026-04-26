@@ -143,9 +143,9 @@ C:\tools\anonym\anonym.exe doctor `
   --raw-path D:\secure-raw `
   --output-path C:\work\my-ai-project\anonymized `
   --workspace-path C:\work\my-ai-project `
-  --api-base-url https://api.company.local `
+  --api-base-url https://production-retrievals.ai.rarus-cloud.ru `
   --api-partner-id <partner_uuid> `
-  --allowed-hosts api.company.local `
+  --allowed-hosts production-retrievals.ai.rarus-cloud.ru `
   --max-file-size-mb 25 `
   --max-pages 300 `
   --request-timeout-sec 5 `
@@ -157,11 +157,11 @@ C:\tools\anonym\anonym.exe doctor `
 ### рабочий цикл
 
 ```powershell
-C:\tools\anonym\anonym.exe scan --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id <partner_uuid> --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+C:\tools\anonym\anonym.exe scan --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://production-retrievals.ai.rarus-cloud.ru --api-partner-id <partner_uuid> --allowed-hosts production-retrievals.ai.rarus-cloud.ru --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 
-C:\tools\anonym\anonym.exe list --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id <partner_uuid> --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+C:\tools\anonym\anonym.exe list --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://production-retrievals.ai.rarus-cloud.ru --api-partner-id <partner_uuid> --allowed-hosts production-retrievals.ai.rarus-cloud.ru --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 
-C:\tools\anonym\anonym.exe run <id> --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://api.company.local --api-partner-id <partner_uuid> --allowed-hosts api.company.local --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
+C:\tools\anonym\anonym.exe run <id> --raw-path D:\secure-raw --output-path C:\work\my-ai-project\anonymized --workspace-path C:\work\my-ai-project --api-base-url https://production-retrievals.ai.rarus-cloud.ru --api-partner-id <partner_uuid> --allowed-hosts production-retrievals.ai.rarus-cloud.ru --max-file-size-mb 25 --max-pages 300 --request-timeout-sec 5 --max-parallel-runs 1
 ```
 
 ## вариант 2: вы сделали `git clone`
@@ -184,9 +184,9 @@ go run ./cmd/anonym doctor `
   --raw-path D:\secure-raw `
   --output-path C:\work\my-ai-project\anonymized `
   --workspace-path C:\work\my-ai-project `
-  --api-base-url https://api.company.local `
+  --api-base-url https://production-retrievals.ai.rarus-cloud.ru `
   --api-partner-id <partner_uuid> `
-  --allowed-hosts api.company.local `
+  --allowed-hosts production-retrievals.ai.rarus-cloud.ru `
   --max-file-size-mb 25 `
   --max-pages 300 `
   --request-timeout-sec 5 `
@@ -209,9 +209,9 @@ go run ./cmd/anonym doctor `
 $env:ANON_RAW_PATH="D:\secure-raw"
 $env:ANON_OUTPUT_PATH="C:\work\my-ai-project\anonymized"
 $env:ANON_WORKSPACE_PATH="C:\work\my-ai-project"
-$env:ANON_API_BASE_URL="https://api.company.local"
+$env:ANON_API_BASE_URL="https://production-retrievals.ai.rarus-cloud.ru"
 $env:ANON_API_PARTNER_ID="<partner_uuid>"
-$env:ANON_ALLOWED_HOSTS="api.company.local"
+$env:ANON_ALLOWED_HOSTS="production-retrievals.ai.rarus-cloud.ru"
 $env:ANON_MAX_FILE_SIZE_MB="25"
 $env:ANON_MAX_PAGES="300"
 $env:ANON_REQUEST_TIMEOUT_SEC="5"
@@ -253,3 +253,4 @@ go run ./cmd/anonym run <id>
 
 1. Подсчет страниц PDF в `run` эвристический (по структуре PDF), в редких сложных файлах возможна неточность.
 2. Для DOCX основной источник страниц — `docProps/app.xml`; при отсутствии метаданных применяется fallback по page-break в `word/document.xml`.
+

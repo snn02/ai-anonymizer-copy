@@ -272,3 +272,21 @@
 - Тип: изменение
 - Описание: по техлид-ревью доработан `v1-i3`: в preflight добавлен детерминированный маппинг `secret not found` в стабильную бизнес-ошибку, усилен тест на источник значения `Authorization`, и UUID-валидация `api.partner_id` унифицирована в общем runtime-пути (`scan/list/run/doctor`).
 - Ссылка: `../../test-scenarios.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: обновлены дефолты API-конфигурации под production endpoint: в `config.example.yaml` и документации (`technical/configuration.md`, `user-guide.md`) зафиксированы значения по умолчанию `api.base_url=https://production-retrievals.ai.rarus-cloud.ru` и `security.allowed_hosts=["production-retrievals.ai.rarus-cloud.ru"]`.
+- Ссылка: `../../technical/configuration.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: запланирована итерация `v1-i4` для доведения runtime до config-first сценария: чтение `config.yaml`/`--config`, гарантированный приоритет `CLI > env > config file`, и компактные вызовы `doctor/scan/list/run` с точечными override.
+- Ссылка: `plan.md`
+
+### 2026-04-26
+
+- Тип: изменение
+- Описание: создан OpenSpec feature-пакет `v1-i4-config-first-loading` (`proposal/tasks/spec`) для реализации config-first runtime-конфигурации и синхронизирован индекс `docs/versions/v1/openspec.md` с переводом `v1-i4` в активные итерации.
+- Ссылка: `openspec.md`

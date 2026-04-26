@@ -50,11 +50,31 @@
 Артефакты OpenSpec:
 - feature-пакет: `../../../openspec/changes/v1-i2-run-api-adapter/`.
 
+### Итерация 4 (v1-i4): config-first runtime configuration
+
+Цель итерации:
+- обеспечить полноценную загрузку параметров из `config.yaml` как базового сценария запуска, с предсказуемым переопределением через env и CLI.
+
+Фичи итерации:
+1. Runtime реально читает `config.yaml` (включая путь через `--config`).
+2. Приоритет источников строго соблюдается: `CLI > env > config file`.
+3. Все runtime-команды (`doctor/scan/list/run`) поддерживают компактный вызов с минимальным набором флагов при заполненном конфиге.
+4. Ошибки чтения/парсинга/валидации конфига возвращаются в явном, диагностируемом виде.
+
+Границы итерации:
+- новые функциональные возможности API не добавляются;
+- контракт заголовков `run` не меняется (`Authorization`, `partner-id`, `fields=anonymizer`).
+
+Артефакты OpenSpec:
+- feature-пакет: `../../../openspec/changes/v1-i4-config-first-loading/`.
+
 ## Функциональные требования v1
 
 - Команды CLI: `anonym scan`, `anonym list`, `anonym run`, `anonym doctor`.
 - Локальное состояние со статусами: `new/scanned/sent/succeeded/failed`.
 - Контракт конфигурации зафиксирован в `docs/technical/configuration.md` и шаблоне `config.example.yaml`.
+- Базовый сценарий запуска `v1`: параметры задаются в `config.yaml`, override при необходимости выполняется через env или CLI.
+- Дефолты production-контура для API в `v1`: `api.base_url=https://production-retrievals.ai.rarus-cloud.ru`, `security.allowed_hosts=["production-retrievals.ai.rarus-cloud.ru"]`.
 - Интеграция с API:
   - `POST /v1/tasks/file_anonymization`
   - `GET /v1/tasks/anonymization_file_types`
