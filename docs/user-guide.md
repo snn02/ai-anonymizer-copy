@@ -76,16 +76,43 @@ Runtime применяет значения в порядке:
 
 ## Настройка Секретов В OS Secret Store
 
-Общий шаблон:
+### Что Является Секретом, А Что Нет
+
+1. `api.partner_id` в `config` — это идентификатор (UUID), не секрет.
+2. `audit.hmac_key_id` в `config` — это идентификатор записи HMAC, не секрет.
+3. Секреты — это только значения:
+   - `API_TOKEN` (для заголовка `Authorization`);
+   - `HMAC_SECRET` (для подписи audit).
+
+### Общий Шаблон Хранения
+
 1. `service`: `ai-anonymizer/api`
-2. `account=<api.partner_id>`, `value=<API_TOKEN>`
-3. `account=<audit.hmac_key_id>`, `value=<HMAC_SECRET>`
+2. API-token:
+   - `account(user) = <api.partner_id из config>`
+   - `value = <API_TOKEN>`
+3. Audit HMAC:
+   - `account(user) = <audit.hmac_key_id из config>`
+   - `value = <HMAC_SECRET>`
+
+Важно:
+1. `<partner_uuid>` в командах ниже должен быть тем же значением, что и `api.partner_id` в `config`.
+2. Если в `config` вы поменяли `audit.hmac_key_id`, используйте это же значение в секрете (не обязательно `audit-hmac-v1`).
+
+### Генерация HMAC_SECRET (PowerShell)
+
+Сгенерируйте случайное значение `HMAC_SECRET` (Base64, 32 байта):
+
+```powershell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+```
+
+Используйте выведенную строку как `<HMAC_SECRET>` в командах ниже.
 
 ### Windows (Credential Manager)
 
 ```powershell
 cmdkey /generic:"ai-anonymizer/api:<partner_uuid>" /user:"<partner_uuid>" /pass:"<API_TOKEN>"
-cmdkey /generic:"ai-anonymizer/api:audit-hmac-v1" /user:"audit-hmac-v1" /pass:"<HMAC_SECRET>"
+cmdkey /generic:"ai-anonymizer/api:<audit_hmac_key_id>" /user:"<audit_hmac_key_id>" /pass:"<HMAC_SECRET>"
 ```
 
 Проверка:
@@ -98,14 +125,14 @@ cmdkey /list | findstr "ai-anonymizer/api"
 
 ```bash
 echo -n "<API_TOKEN>" | secret-tool store --label="ai-anonymizer api partner" service "ai-anonymizer/api" username "<partner_uuid>"
-echo -n "<HMAC_SECRET>" | secret-tool store --label="ai-anonymizer audit hmac" service "ai-anonymizer/api" username "audit-hmac-v1"
+echo -n "<HMAC_SECRET>" | secret-tool store --label="ai-anonymizer audit hmac" service "ai-anonymizer/api" username "<audit_hmac_key_id>"
 ```
 
 ### Macos (Keychain)
 
 ```bash
 security add-generic-password -U -s "ai-anonymizer/api" -a "<partner_uuid>" -w "<API_TOKEN>"
-security add-generic-password -U -s "ai-anonymizer/api" -a "audit-hmac-v1" -w "<HMAC_SECRET>"
+security add-generic-password -U -s "ai-anonymizer/api" -a "<audit_hmac_key_id>" -w "<HMAC_SECRET>"
 ```
 
 ## Приоритетный Сценарий: Запуск Через Config
