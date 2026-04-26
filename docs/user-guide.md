@@ -48,16 +48,73 @@
 
 ### секреты (обязательно)
 
-Секреты должны быть в OS secret store (не в `yaml`, не в `.env`):
+Секреты должны храниться только в OS secret store (не в `yaml`, не в `.env`).
+
+Общий шаблон:
 1. `service`: `ai-anonymizer/api`
 2. `account`: значение `api.partner_id` (например, `partner-1`)  
    `value`: API secret/token
 3. `account`: значение `audit.hmac_key_id` (обычно `audit-hmac-v1`)  
    `value`: секрет для HMAC аудита
 
-Проверка, что всё настроено:
+#### что такое `audit.hmac_key_id` и где взять значение
+
+1. `audit.hmac_key_id` — это имя записи в keyring для audit-HMAC ключа.
+2. Пример: `audit-hmac-v1` (это именно `account`, не сам секрет).
+3. `value` для этой записи генерирует ваша команда/администратор (это не API-токен).
+4. Рекомендуемая генерация в PowerShell (первый вариант):
+
+```powershell
+[Convert]::ToBase64String((1..32 | ForEach-Object {Get-Random -Maximum 256}))
+```
+
+Сохраните результат команды как `value` для `account = audit-hmac-v1`.
+
+#### windows (credential manager)
+
+```powershell
+cmdkey /generic:"ai-anonymizer/api:partner-1" /user:"partner-1" /pass:"<API_TOKEN>"
+cmdkey /generic:"ai-anonymizer/api:audit-hmac-v1" /user:"audit-hmac-v1" /pass:"<HMAC_SECRET>"
+```
+
+Проверка:
+
+```powershell
+cmdkey /list | findstr "ai-anonymizer/api"
+```
+
+#### linux (secret service / gnome keyring)
+
+```bash
+echo -n "<API_TOKEN>" | secret-tool store --label="ai-anonymizer api partner" service "ai-anonymizer/api" username "partner-1"
+echo -n "<HMAC_SECRET>" | secret-tool store --label="ai-anonymizer audit hmac" service "ai-anonymizer/api" username "audit-hmac-v1"
+```
+
+Проверка:
+
+```bash
+secret-tool lookup service "ai-anonymizer/api" username "partner-1"
+secret-tool lookup service "ai-anonymizer/api" username "audit-hmac-v1"
+```
+
+#### macos (keychain)
+
+```bash
+security add-generic-password -U -s "ai-anonymizer/api" -a "partner-1" -w "<API_TOKEN>"
+security add-generic-password -U -s "ai-anonymizer/api" -a "audit-hmac-v1" -w "<HMAC_SECRET>"
+```
+
+Проверка:
+
+```bash
+security find-generic-password -s "ai-anonymizer/api" -wa "partner-1"
+security find-generic-password -s "ai-anonymizer/api" -wa "audit-hmac-v1"
+```
+
+#### финальная проверка после добавления секретов
+
 1. запустите `doctor`;
-2. если секретов нет, `doctor` вернет понятную ошибку.
+2. если секреты не найдены, `doctor` вернет понятную ошибку и подскажет, что проверить.
 
 ## вариант 1: у вас уже есть `anonym.exe`
 
