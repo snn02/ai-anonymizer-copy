@@ -2,7 +2,7 @@
 
 ## Статус
 
-`v1` завершена для базового релизного scope. Открыта post-release итерация `v1-i4` для config-first runtime-конфигурации.
+`v1` работает в post-release режиме: активен подэтап `v1-1-ws`.
 
 ## Где лежат артефакты
 
@@ -11,10 +11,7 @@
 
 ## Активные feature-пакеты v1
 
-- `v1-i4-config-first-loading`:
-  - `../../../openspec/changes/v1-i4-config-first-loading/proposal.md`
-  - `../../../openspec/changes/v1-i4-config-first-loading/tasks.md`
-  - `../../../openspec/changes/v1-i4-config-first-loading/specs/v1-i4-core/spec.md`
+- активных feature-пакетов нет; текущие доработки идут в рамках отладки `v1` без открытия нового feature-пакета.
 
 ## Закрытые feature-пакеты v1
 
@@ -30,10 +27,22 @@
   - `../../../openspec/archive/v1-i3-doctor-api-header-alignment/proposal.md`
   - `../../../openspec/archive/v1-i3-doctor-api-header-alignment/tasks.md`
   - `../../../openspec/archive/v1-i3-doctor-api-header-alignment/specs/v1-i3-core/spec.md`
+- `v1-i4-config-first-loading`:
+  - `../../../openspec/archive/v1-i4-config-first-loading/proposal.md`
+  - `../../../openspec/archive/v1-i4-config-first-loading/tasks.md`
+  - `../../../openspec/archive/v1-i4-config-first-loading/specs/v1-i4-core/spec.md`
+- `v1-1-ws-insecure-mvp-auth`:
+  - `../../../openspec/changes/archive/2026-04-29-v1-1-ws-insecure-mvp-auth/proposal.md`
+  - `../../../openspec/changes/archive/2026-04-29-v1-1-ws-insecure-mvp-auth/tasks.md`
+  - `../../../openspec/specs/v1-1-ws-core/spec.md`
+- `v1-i5-http-debug-log`:
+  - `../../../openspec/changes/archive/2026-04-29-v1-i5-http-debug-log/proposal.md`
+  - `../../../openspec/changes/archive/2026-04-29-v1-i5-http-debug-log/tasks.md`
+  - `../../../openspec/specs/v1-i5-core/spec.md`
 
 ## Подготовленные следующие итерации
 
-- после `v1-i4` дополнительные post-release итерации не запланированы; дальнейшее планирование ведется в рамках `v2`.
+- после `v1-1-ws` дополнительные post-release итерации не запланированы; `v2` остается зарезервированной под MCP-этап.
 
 ## Правило
 
@@ -58,7 +67,7 @@
    - перед переводом чекбокса в `[x]` выполняется проверка соответствия `plan.md` по всем пунктам, попавшим в scope итерации;
    - результаты проверки фиксируются в `docs/versions/v1/action-log.md`.
 
-## Чек-лист планирования v1-i2
+## Чек-лист планирования
 
 - добавить в `tasks.md` явный трек security-подзадач с DoD;
 - для каждой security-подзадачи предусмотреть отрицательные тест-кейсы;
