@@ -68,6 +68,43 @@
 Артефакты OpenSpec:
 - feature-пакет: `../../../openspec/changes/v1-i4-config-first-loading/`.
 
+### Подверсия (v1-1-ws): workspace-isolated mvp profile
+
+Цель подверсии:
+- обеспечить запуск в изолированных AI IDE (Codex/Claude Code/Open Code), где runtime не видит OS secret store хоста.
+
+Фичи подверсии:
+1. Вводится явный временный профиль `v1-1-ws` без OS secret store для API auth.
+2. Авторизация выполняется через runtime-параметр токена (env/config) только при включенном insecure-режиме.
+3. Audit HMAC ключ (`HMAC_SECRET`) также задается через runtime-параметр (env/config) только при включенном insecure-режиме.
+4. Добавляются компенсирующие ограничения: non-production scope, явные предупреждения, операционный регламент revoke/rotation.
+4. Документация и тестовые сценарии фиксируют, что профиль временный и должен быть заменен защищенной моделью в следующем этапе.
+
+Границы подверсии:
+- MCP-архитектура и `v2` не затрагиваются;
+- базовые security-проверки `v1` (boundary/path hardening/https/allowlist/audit/limits) сохраняются;
+- изменения не должны автоматически ослаблять default-профиль `v1` с OS secret store.
+
+Артефакты OpenSpec:
+- feature-пакет: `../../../openspec/changes/v1-1-ws-insecure-mvp-auth/` (планируется).
+
+### Итерация 5 (v1-i5): http debug log для диагностики
+
+Цель итерации:
+- добавить управляемый диагностический http-лог для `doctor/run` без ослабления security-модели.
+
+Фичи итерации:
+1. Debug-лог HTTP-вызовов включается только через `ANON_HTTP_DEBUG=true`.
+2. Лог пишется в `<workspace>/.anonym/http-debug.log`.
+3. Чувствительные заголовки (включая `Authorization`) маскируются.
+
+Границы итерации:
+- default-поведение команд и policy секретов не меняются;
+- `v2` и MCP не затрагиваются.
+
+Артефакты OpenSpec:
+- feature-пакет: `../../../openspec/changes/v1-i5-http-debug-log/`.
+
 ## Функциональные требования v1
 
 - Команды CLI: `anonym scan`, `anonym list`, `anonym run`, `anonym doctor`.
@@ -79,6 +116,7 @@
   - `POST /v1/tasks/file_anonymization`
   - `GET /v1/tasks/anonymization_file_types`
   - `GET /v1/tasks/anonymization_fields`
+  - preflight `doctor` для `anonymization_fields` использует headers `Authorization`, `partner-id`, `user-id` и query `page`, `per_page`.
 - Контракт `POST /v1/tasks/file_anonymization` в `v1`:
   - обязательные заголовки: `Authorization`, `partner-id` (UUID), `fields=anonymizer`;
   - optional заголовки: `tags-numeration`, `user-id` (UUID);
@@ -113,6 +151,10 @@
   - хранятся в OS secret store;
   - запрещен fallback в plaintext-конфиг;
   - в логи/ошибки секреты не попадают.
+- Временное исключение для `v1-1-ws`:
+  - допускаются `api.auth_token` и `audit.hmac_secret` из env/config только при явном insecure-профиле;
+  - профиль ограничен non-production использованием;
+  - обязательны компенсирующие меры (ротация/revoke, предупреждения в CLI и документации).
 - Аудит в v1:
   - без PII и секретов;
   - `file-id` в журнале хранится в виде HMAC-хэша;
@@ -122,7 +164,6 @@
   - адаптер покрывается интеграционными тестами на реальных/эталонных ответах.
 - Ограничения параметризации заголовков в `v1`:
   - `fields` фиксируется в `anonymizer` (без CLI/env override);
-  - `user-id` не отправляется из CLI runtime `v1`.
 - Fuzzy-поиск в `run`:
   - автозапуск только при одном совпадении;
   - при нескольких совпадениях требуется явный выбор `id`.
