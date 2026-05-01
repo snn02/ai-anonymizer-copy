@@ -435,3 +435,9 @@
 - Тип: изменение
 - Описание: открыт mini-change `v1-i10-run-userid-header`: для `run` запланировано выравнивание с API-контрактом `POST /v1/tasks/file_anonymization` по заголовку `user-id`; добавлены задачи на тесты и синхронизацию документации.
 - Ссылка: `../../../openspec/changes/v1-i10-run-userid-header/tasks.md`
+
+### 2026-05-01
+
+- Тип: изменение
+- Описание: mini-change `v1-i10-run-userid-header` заархивирован в `openspec/changes/archive/2026-05-01-v1-i10-run-userid-header`; индекс `docs/versions/v1/openspec.md` синхронизирован.
+- Ссылка: `../../../openspec/changes/archive/2026-05-01-v1-i10-run-userid-header/tasks.md`
