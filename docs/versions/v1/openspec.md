@@ -21,12 +21,6 @@
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/tasks.md`
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-i8-mvp-config-runtime/spec.md`
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-1-ws-core/spec.md`
-- `v1-i9-cli-mode-and-overrides-simplification`:
-  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/proposal.md`
-  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/design.md`
-  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/tasks.md`
-  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/specs/v1-i9-cli-mode-and-overrides-simplification/spec.md`
-  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/specs/v1-1-ws-core/spec.md`
 
 ## Закрытые feature-пакеты v1
 
@@ -54,6 +48,12 @@
   - `../../../openspec/changes/archive/2026-04-29-v1-i5-http-debug-log/proposal.md`
   - `../../../openspec/changes/archive/2026-04-29-v1-i5-http-debug-log/tasks.md`
   - `../../../openspec/specs/v1-i5-core/spec.md`
+- `v1-i9-cli-mode-and-overrides-simplification`:
+  - `../../../openspec/changes/archive/2026-05-01-v1-i9-cli-mode-and-overrides-simplification/proposal.md`
+  - `../../../openspec/changes/archive/2026-05-01-v1-i9-cli-mode-and-overrides-simplification/design.md`
+  - `../../../openspec/changes/archive/2026-05-01-v1-i9-cli-mode-and-overrides-simplification/tasks.md`
+  - `../../../openspec/changes/archive/2026-05-01-v1-i9-cli-mode-and-overrides-simplification/specs/v1-i9-cli-mode-and-overrides-simplification/spec.md`
+  - `../../../openspec/changes/archive/2026-05-01-v1-i9-cli-mode-and-overrides-simplification/specs/v1-1-ws-core/spec.md`
 
 ## Подготовленные следующие итерации
 

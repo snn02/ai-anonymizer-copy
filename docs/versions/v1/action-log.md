@@ -423,3 +423,9 @@
 - Тип: изменение
 - Описание: начата итерация `v1-i9-cli-mode-and-overrides-simplification`: введен единый runtime-режим `mode=prod|mvp`, CLI сокращен до минимальных override (`config/mode/workspace/output`), снят host-блок для `mvp` на production API, обновлены тесты и конфигурационный контракт.
 - Ссылка: `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/tasks.md`
+
+### 2026-05-01
+
+- Тип: изменение
+- Описание: OpenSpec-пакет `v1-i9-cli-mode-and-overrides-simplification` заархивирован в `openspec/changes/archive/2026-05-01-v1-i9-cli-mode-and-overrides-simplification`; индекс `docs/versions/v1/openspec.md` синхронизирован.
+- Ссылка: `openspec.md`
