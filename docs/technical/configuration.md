@@ -2,22 +2,24 @@
 
 ## Назначение
 
-Единая конфигурация trusted CLI для `scan/list/run/doctor` с профилями `v1` и `v1-1-ws`.
+Единая конфигурация trusted CLI для `scan/list/run/doctor` с режимами `prod` и `mvp`.
 
 ## Принципы
 
-1. Для стандартного профиля `v1` секреты не хранятся в `yaml/json/env` и читаются только из OS secret store.
+1. Для режима `prod` секреты не хранятся в `yaml/json/env` и читаются только из OS secret store.
 2. Конфиг валидируется на старте и повторно проверяется в `anonym doctor`.
 3. Небезопасные значения блокируют рабочие команды.
 
 Временное исключение:
-- для профиля `v1-1-ws` допускаются `api.auth_token` и `audit.hmac_secret` из `config/env/CLI` при явном insecure-включении.
+- для режима `mvp` допускаются `api.auth_token` и `audit.hmac_secret` из `config/env`.
 
 ## Приоритет источников
 
 1. CLI-флаги.
 2. Переменные окружения.
 3. `config.yaml`.
+
+Для параметров, у которых CLI-override удален, фактический приоритет: `env > config file`.
 
 Если есть конфликт, применяется источник с более высоким приоритетом.
 
@@ -28,24 +30,20 @@
 3. Если `--config` не указан явно, используется дефолтный путь команды; при отсутствии файла runtime продолжает работу с env/CLI.
 4. При невалидном YAML runtime возвращает явную ошибку парсинга.
 
-## Временный auth-профиль `v1-1-ws` (MVP)
+## Режим `mvp` (MVP)
 
 Назначение:
 - запуск в изолированных AI IDE, где OS secret store хоста недоступен runtime.
 
-Параметры профиля (фактический контракт):
-1. `runtime.profile=v1-1-ws` (или эквивалентный CLI/env флаг профиля).
-2. `security_flags.insecure_no_secrets=true` (явное подтверждение insecure-режима).
-3. `api.auth_token` (или `ANON_API_AUTH_TOKEN`) — временный токен API.
-4. `audit.hmac_secret` (или `ANON_AUDIT_HMAC_SECRET`) — временный секрет HMAC для audit.
+Параметры режима (фактический контракт):
+1. `runtime.mode=mvp` (или `--mode mvp` / `ANON_MODE=mvp`).
+2. `api.auth_token` (или `ANON_API_AUTH_TOKEN`) — временный токен API.
+3. `audit.hmac_secret` (или `ANON_AUDIT_HMAC_SECRET`) — временный секрет HMAC для audit.
 
 Правила:
-1. Без явного insecure-включения токен из env/config не используется.
-2. Без явного insecure-включения `audit.hmac_secret` из env/config не используется.
-3. Для стандартного профиля `v1` поведение не меняется: только OS secret store.
-4. `v1-1-ws` допускается только в non-production контурах.
-5. При активном `v1-1-ws` CLI обязан выводить предупреждение о снижении security-гарантий.
-6. Для `v1-1-ws` и указанных параметров действует единый приоритет источников: `CLI > env > config file`.
+1. Для режима `prod` поведение не меняется: только OS secret store.
+2. Для режима `mvp` секреты берутся из `config/env` и CLI выводит предупреждение о снижении security-гарантий.
+3. Режим `mvp` допускается в production API-контуре при явном выборе режима.
 
 ## Таблица параметров runtime v1
 
@@ -64,6 +62,7 @@
 | `security.require_tls_verify` | bool | да | `true` | `true` | `ANON_REQUIRE_TLS_VERIFY` |
 | `audit.retention_days` | int | да | `30` | `90` | `ANON_AUDIT_RETENTION_DAYS` |
 | `audit.hmac_key_id` | string | да | `audit-hmac-v1` | `audit-hmac-v1` | `ANON_AUDIT_HMAC_KEY_ID` |
+| `runtime.mode` | string | да | `prod` | `mvp` | `ANON_MODE` |
 | `audit.path` | string (abs path) | нет | `<workspace>/.anonym/audit.log` | `C:/work/project/.anonym/audit.log` | - |
 
 `catalog.path` в runtime `v1` не задается через `config/env/CLI` и вычисляется автоматически как `<workspace>/.anonym/catalog.json`.

@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -64,17 +63,19 @@ func TestRunDoctorSuccess(t *testing.T) {
 	if err := os.MkdirAll(output, 0o755); err != nil {
 		t.Fatal(err)
 	}
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       server.URL,
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"127.0.0.1", "localhost"},
+	})
 
 	var out bytes.Buffer
 	err := run([]string{
 		"doctor",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &out, &out)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -98,17 +99,19 @@ func TestRunScanAndListFlow(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(raw, "in", "sample.txt"), []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       "https://api.company.local",
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"api.company.local"},
+	})
 
 	var scanOut bytes.Buffer
 	scanErr := run([]string{
 		"scan",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", "https://api.company.local",
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "api.company.local",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &scanOut, &scanOut)
 	if scanErr != nil {
 		t.Fatalf("scan failed: %v", scanErr)
@@ -120,13 +123,7 @@ func TestRunScanAndListFlow(t *testing.T) {
 	var listOut bytes.Buffer
 	listErr := run([]string{
 		"list",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", "https://api.company.local",
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "api.company.local",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &listOut, &listOut)
 	if listErr != nil {
 		t.Fatalf("list failed: %v", listErr)
@@ -194,17 +191,19 @@ func TestRunExecutesExplicitSendByID(t *testing.T) {
 	prevRunDeps := runDeps
 	runDeps = runDepsForTest(server.Client())
 	defer func() { runDeps = prevRunDeps }()
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       server.URL,
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"127.0.0.1", "localhost"},
+	})
 
 	var scanOut bytes.Buffer
 	if err := run([]string{
 		"scan",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &scanOut, &scanOut); err != nil {
 		t.Fatalf("scan failed: %v", err)
 	}
@@ -213,13 +212,7 @@ func TestRunExecutesExplicitSendByID(t *testing.T) {
 	err := run([]string{
 		"run",
 		catalog.BuildID("in/sample.txt"),
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &runOut, &runOut)
 	if err != nil {
 		t.Fatalf("run failed: %v", err)
@@ -267,17 +260,19 @@ func TestRunFuzzyAmbiguousRequiresExplicitID(t *testing.T) {
 	prevRunDeps := runDeps
 	runDeps = runDepsForTest(server.Client())
 	defer func() { runDeps = prevRunDeps }()
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       server.URL,
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"127.0.0.1", "localhost"},
+	})
 
 	var scanOut bytes.Buffer
 	if err := run([]string{
 		"scan",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &scanOut, &scanOut); err != nil {
 		t.Fatalf("scan failed: %v", err)
 	}
@@ -286,13 +281,7 @@ func TestRunFuzzyAmbiguousRequiresExplicitID(t *testing.T) {
 	err := run([]string{
 		"run",
 		"invoice",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &runOut, &runOut)
 	if err == nil {
 		t.Fatal("expected ambiguity error")
@@ -328,17 +317,19 @@ func TestRunMarksCatalogFailedWhenAPIFails(t *testing.T) {
 	prevRunDeps := runDeps
 	runDeps = runDepsForTest(server.Client())
 	defer func() { runDeps = prevRunDeps }()
+	cfgPath := writeRuntimeConfig(t, runtimeConfigValues{
+		RawPath:       raw,
+		OutputPath:    output,
+		WorkspacePath: workspace,
+		BaseURL:       server.URL,
+		PartnerID:     testPartnerUUID,
+		AllowedHosts:  []string{"127.0.0.1", "localhost"},
+	})
 
 	var scanOut bytes.Buffer
 	if err := run([]string{
 		"scan",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &scanOut, &scanOut); err != nil {
 		t.Fatalf("scan failed: %v", err)
 	}
@@ -347,13 +338,7 @@ func TestRunMarksCatalogFailedWhenAPIFails(t *testing.T) {
 	runErr := run([]string{
 		"run",
 		catalog.BuildID("in/sample.txt"),
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &runOut, &runOut)
 	if runErr == nil {
 		t.Fatal("expected run failure")
@@ -362,13 +347,7 @@ func TestRunMarksCatalogFailedWhenAPIFails(t *testing.T) {
 	var listOut bytes.Buffer
 	if err := run([]string{
 		"list",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--max-parallel-runs", "1",
+		"--config", cfgPath,
 	}, &listOut, &listOut); err != nil {
 		t.Fatalf("list failed: %v", err)
 	}
@@ -509,7 +488,7 @@ func TestRunDoctorFailsOnMissingExplicitConfig(t *testing.T) {
 	}
 }
 
-func TestRunDoctorConfigEnvCLIConflictUsesCLI(t *testing.T) {
+func TestRunDoctorConfigEnvCLIConflictUsesCLIMode(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/tasks/anonymization_fields" {
 			w.WriteHeader(http.StatusNotFound)
@@ -540,20 +519,20 @@ func TestRunDoctorConfigEnvCLIConflictUsesCLI(t *testing.T) {
 		RawPath:       raw,
 		OutputPath:    output,
 		WorkspacePath: workspace,
-		BaseURL:       "https://file.invalid.local",
+		BaseURL:       server.URL,
 		PartnerID:     testPartnerUUID,
-		AllowedHosts:  []string{"file.invalid.local"},
+		AllowedHosts:  []string{"127.0.0.1", "localhost"},
 	})
 
-	t.Setenv("ANON_API_BASE_URL", "https://env.invalid.local")
-	t.Setenv("ANON_ALLOWED_HOSTS", "env.invalid.local")
+	t.Setenv("ANON_MODE", "prod")
+	t.Setenv("ANON_API_AUTH_TOKEN", "env-token")
+	t.Setenv("ANON_AUDIT_HMAC_SECRET", "env-audit-secret")
 
 	var out bytes.Buffer
 	err := run([]string{
 		"doctor",
 		"--config", cfgPath,
-		"--api-base-url", server.URL,
-		"--allowed-hosts", "127.0.0.1,localhost",
+		"--mode", "mvp",
 	}, &out, &out)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -563,7 +542,7 @@ func TestRunDoctorConfigEnvCLIConflictUsesCLI(t *testing.T) {
 	}
 }
 
-func TestRunDoctorPrintsWarningForV11WSProfile(t *testing.T) {
+func TestRunDoctorPrintsWarningForMVPMode(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/tasks/anonymization_fields" {
 			w.WriteHeader(http.StatusNotFound)
@@ -588,29 +567,28 @@ func TestRunDoctorPrintsWarningForV11WSProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cfgPath := writeRuntimeConfigV11WS(t, runtimeConfigV11WSValues{
+		RawPath:        raw,
+		OutputPath:     output,
+		WorkspacePath:  workspace,
+		BaseURL:        server.URL,
+		PartnerID:      testPartnerUUID,
+		AllowedHosts:   []string{"127.0.0.1", "localhost"},
+		RuntimeMode:    "mvp",
+		APIAuthToken:   "cfg-token",
+		AuditHMACSecret: "cfg-audit-secret",
+	})
 	var out bytes.Buffer
-	err := run([]string{
-		"doctor",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", server.URL,
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "127.0.0.1,localhost",
-		"--runtime-profile", "v1-1-ws",
-		"--insecure-no-secrets",
-		"--api-auth-token", "session-token",
-		"--audit-hmac-secret", "audit-secret",
-	}, &out, &out)
+	err := run([]string{"doctor", "--config", cfgPath}, &out, &out)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if !strings.Contains(out.String(), "warning: v1-1-ws insecure profile is active") {
+	if !strings.Contains(out.String(), "warning: mvp insecure mode is active") {
 		t.Fatalf("expected insecure profile warning, got %q", out.String())
 	}
 }
 
-func TestRunScanAndListPrintWarningForV11WSProfile(t *testing.T) {
+func TestRunScanAndListPrintWarningForMVPMode(t *testing.T) {
 	raw := filepath.Join(t.TempDir(), "raw")
 	workspace := filepath.Join(t.TempDir(), "workspace")
 	output := filepath.Join(workspace, "anonymized")
@@ -625,50 +603,35 @@ func TestRunScanAndListPrintWarningForV11WSProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cfgPath := writeRuntimeConfigV11WS(t, runtimeConfigV11WSValues{
+		RawPath:         raw,
+		OutputPath:      output,
+		WorkspacePath:   workspace,
+		BaseURL:         "https://api.company.local",
+		PartnerID:       testPartnerUUID,
+		AllowedHosts:    []string{"api.company.local"},
+		RuntimeMode:     "mvp",
+		APIAuthToken:    "cfg-token",
+		AuditHMACSecret: "cfg-audit-secret",
+	})
 	var scanOut bytes.Buffer
-	if err := run([]string{
-		"scan",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", "https://api.company.local",
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "api.company.local",
-		"--runtime-profile", "v1-1-ws",
-		"--insecure-no-secrets",
-		"--api-auth-token", "session-token",
-		"--audit-hmac-secret", "audit-secret",
-		"--max-parallel-runs", "1",
-	}, &scanOut, &scanOut); err != nil {
+	if err := run([]string{"scan", "--config", cfgPath}, &scanOut, &scanOut); err != nil {
 		t.Fatalf("scan failed: %v", err)
 	}
-	if !strings.Contains(scanOut.String(), "warning: v1-1-ws insecure profile is active") {
+	if !strings.Contains(scanOut.String(), "warning: mvp insecure mode is active") {
 		t.Fatalf("expected insecure profile warning in scan, got %q", scanOut.String())
 	}
 
 	var listOut bytes.Buffer
-	if err := run([]string{
-		"list",
-		"--raw-path", raw,
-		"--output-path", output,
-		"--workspace-path", workspace,
-		"--api-base-url", "https://api.company.local",
-		"--api-partner-id", testPartnerUUID,
-		"--allowed-hosts", "api.company.local",
-		"--runtime-profile", "v1-1-ws",
-		"--insecure-no-secrets",
-		"--api-auth-token", "session-token",
-		"--audit-hmac-secret", "audit-secret",
-		"--max-parallel-runs", "1",
-	}, &listOut, &listOut); err != nil {
+	if err := run([]string{"list", "--config", cfgPath}, &listOut, &listOut); err != nil {
 		t.Fatalf("list failed: %v", err)
 	}
-	if !strings.Contains(listOut.String(), "warning: v1-1-ws insecure profile is active") {
+	if !strings.Contains(listOut.String(), "warning: mvp insecure mode is active") {
 		t.Fatalf("expected insecure profile warning in list, got %q", listOut.String())
 	}
 }
 
-func TestRunV11WSUsesCLIOverEnvOverConfigWithoutSecretStore(t *testing.T) {
+func TestRunMVPUsesEnvOverConfigWithoutSecretStore(t *testing.T) {
 	raw := filepath.Join(t.TempDir(), "raw")
 	workspace := filepath.Join(t.TempDir(), "workspace")
 	output := filepath.Join(workspace, "anonymized")
@@ -703,20 +666,18 @@ func TestRunV11WSUsesCLIOverEnvOverConfigWithoutSecretStore(t *testing.T) {
 	defer func() { runDeps = prevRunDeps }()
 
 	cfgPath := writeRuntimeConfigV11WS(t, runtimeConfigV11WSValues{
-		RawPath:            raw,
-		OutputPath:         output,
-		WorkspacePath:      workspace,
-		BaseURL:            server.URL,
-		PartnerID:          testPartnerUUID,
-		AllowedHosts:       []string{"127.0.0.1", "localhost"},
-		RuntimeProfile:     "v1",
-		InsecureNoSecrets:  false,
-		APIAuthToken:       "cfg-token",
-		AuditHMACSecret:    "cfg-audit-secret",
+		RawPath:         raw,
+		OutputPath:      output,
+		WorkspacePath:   workspace,
+		BaseURL:         server.URL,
+		PartnerID:       testPartnerUUID,
+		AllowedHosts:    []string{"127.0.0.1", "localhost"},
+		RuntimeMode:     "mvp",
+		APIAuthToken:    "cfg-token",
+		AuditHMACSecret: "cfg-audit-secret",
 	})
 
-	t.Setenv("ANON_RUNTIME_PROFILE", "v1-1-ws")
-	t.Setenv("ANON_INSECURE_NO_SECRETS", "true")
+	t.Setenv("ANON_MODE", "mvp")
 	t.Setenv("ANON_API_AUTH_TOKEN", "env-token")
 	t.Setenv("ANON_AUDIT_HMAC_SECRET", "env-audit-secret")
 
@@ -730,10 +691,6 @@ func TestRunV11WSUsesCLIOverEnvOverConfigWithoutSecretStore(t *testing.T) {
 		"run",
 		catalog.BuildID("in/sample.txt"),
 		"--config", cfgPath,
-		"--runtime-profile", "v1-1-ws",
-		"--insecure-no-secrets=true",
-		"--api-auth-token", "cli-token",
-		"--audit-hmac-secret", "cli-audit-secret",
 	}, &runOut, &runOut)
 	if err != nil {
 		t.Fatalf("run failed: %v", err)
@@ -741,8 +698,8 @@ func TestRunV11WSUsesCLIOverEnvOverConfigWithoutSecretStore(t *testing.T) {
 	if !strings.Contains(runOut.String(), "run: succeeded") {
 		t.Fatalf("unexpected run output: %q", runOut.String())
 	}
-	if gotAuth != "cli-token" {
-		t.Fatalf("expected Authorization from CLI token, got %q", gotAuth)
+	if gotAuth != "env-token" {
+		t.Fatalf("expected Authorization from env token, got %q", gotAuth)
 	}
 }
 
@@ -810,8 +767,7 @@ type runtimeConfigV11WSValues struct {
 	BaseURL           string
 	PartnerID         string
 	AllowedHosts      []string
-	RuntimeProfile    string
-	InsecureNoSecrets bool
+	RuntimeMode       string
 	APIAuthToken      string
 	AuditHMACSecret   string
 }
@@ -848,9 +804,7 @@ func writeRuntimeConfigV11WS(t *testing.T, values runtimeConfigV11WSValues) stri
 		"  hmac_key_id: \"audit-hmac-v1\"",
 		"  hmac_secret: \""+values.AuditHMACSecret+"\"",
 		"runtime:",
-		"  profile: \""+values.RuntimeProfile+"\"",
-		"security_flags:",
-		"  insecure_no_secrets: "+strconv.FormatBool(values.InsecureNoSecrets),
+		"  mode: \""+values.RuntimeMode+"\"",
 	)
 	content := strings.Join(lines, "\n") + "\n"
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {

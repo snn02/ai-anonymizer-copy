@@ -16,6 +16,9 @@ paths:
 api:
   base_url: "https://file.company.local"
   partner_id: "70bd3a91-0000-0000-0000-000000000000"
+  user_id: "70bd3a91-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+  fields_page: 2
+  fields_per_page: 20
 limits:
   max_file_size_mb: 41
   max_pages: 420
@@ -27,6 +30,11 @@ security:
 audit:
   retention_days: 44
   hmac_key_id: "file-audit-key"
+  hmac_secret: "file-audit-secret"
+runtime:
+  profile: "v1-1-ws"
+security_flags:
+  insecure_no_secrets: true
 `)
 
 	cfg, err := Load(LoadOptions{
@@ -51,6 +59,15 @@ audit:
 	if cfg.APIPartnerID != "70bd3a91-0000-0000-0000-000000000000" {
 		t.Fatalf("expected partner_id from file, got %q", cfg.APIPartnerID)
 	}
+	if cfg.APIUserID != "70bd3a91-aaaa-aaaa-aaaa-aaaaaaaaaaaa" {
+		t.Fatalf("expected user_id from file, got %q", cfg.APIUserID)
+	}
+	if cfg.APIFieldsPage != 2 {
+		t.Fatalf("expected fields_page=2, got %d", cfg.APIFieldsPage)
+	}
+	if cfg.APIFieldsPerPage != 20 {
+		t.Fatalf("expected fields_per_page=20, got %d", cfg.APIFieldsPerPage)
+	}
 	if len(cfg.APIAllowedHosts) != 1 || cfg.APIAllowedHosts[0] != "file.company.local" {
 		t.Fatalf("expected allowed_hosts from file, got %#v", cfg.APIAllowedHosts)
 	}
@@ -72,6 +89,21 @@ audit:
 	if cfg.AuditHMACKeyID != "file-audit-key" {
 		t.Fatalf("expected audit_hmac_key_id=file-audit-key, got %q", cfg.AuditHMACKeyID)
 	}
+	if cfg.AuditHMACSecret != "file-audit-secret" {
+		t.Fatalf("expected audit_hmac_secret from file, got %q", cfg.AuditHMACSecret)
+	}
+	if cfg.APIAuthToken != "" {
+		t.Fatalf("expected empty api auth token by default, got %q", cfg.APIAuthToken)
+	}
+	if cfg.RuntimeProfile != "v1-1-ws" {
+		t.Fatalf("expected runtime profile from file, got %q", cfg.RuntimeProfile)
+	}
+	if cfg.RuntimeMode != "mvp" {
+		t.Fatalf("expected runtime mode=mvp from legacy profile mapping, got %q", cfg.RuntimeMode)
+	}
+	if !cfg.InsecureNoSecrets {
+		t.Fatalf("expected insecure flag from file")
+	}
 }
 
 func TestLoadUsesPrecedenceCLIOverEnvOverFile(t *testing.T) {
@@ -83,6 +115,9 @@ paths:
 api:
   base_url: "https://file.company.local"
   partner_id: "70bd3a91-1111-1111-1111-111111111111"
+  user_id: "70bd3a91-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+  fields_page: 2
+  fields_per_page: 20
 limits:
   max_file_size_mb: 41
   max_pages: 420
@@ -94,6 +129,11 @@ security:
 audit:
   retention_days: 44
   hmac_key_id: "file-audit-key"
+  hmac_secret: "file-audit-secret"
+runtime:
+  profile: "v1"
+security_flags:
+  insecure_no_secrets: false
 `)
 
 	t.Setenv("ANON_RAW_PATH", "D:/env-raw")
@@ -101,6 +141,9 @@ audit:
 	t.Setenv("ANON_WORKSPACE_PATH", "C:/env/workspace")
 	t.Setenv("ANON_API_BASE_URL", "https://env.company.local")
 	t.Setenv("ANON_API_PARTNER_ID", "70bd3a91-2222-2222-2222-222222222222")
+	t.Setenv("ANON_API_USER_ID", "70bd3a91-cccc-cccc-cccc-cccccccccccc")
+	t.Setenv("ANON_API_FIELDS_PAGE", "3")
+	t.Setenv("ANON_API_FIELDS_PER_PAGE", "30")
 	t.Setenv("ANON_ALLOWED_HOSTS", "env.company.local")
 	t.Setenv("ANON_REQUEST_TIMEOUT_SEC", "33")
 	t.Setenv("ANON_MAX_FILE_SIZE_MB", "50")
@@ -108,10 +151,17 @@ audit:
 	t.Setenv("ANON_MAX_PARALLEL_RUNS", "1")
 	t.Setenv("ANON_AUDIT_RETENTION_DAYS", "60")
 	t.Setenv("ANON_AUDIT_HMAC_KEY_ID", "env-audit-key")
+	t.Setenv("ANON_RUNTIME_PROFILE", "v1-1-ws")
+	t.Setenv("ANON_INSECURE_NO_SECRETS", "true")
+	t.Setenv("ANON_API_AUTH_TOKEN", "env-auth-token")
+	t.Setenv("ANON_AUDIT_HMAC_SECRET", "env-hmac-secret")
 
 	cfg, err := Load(LoadOptions{
 		ConfigPath:         cfgPath,
 		RawPath:            "D:/cli-raw",
+		APIUserID:          "70bd3a91-dddd-dddd-dddd-dddddddddddd",
+		APIFieldsPage:      4,
+		APIFieldsPerPage:   40,
 		AllowedHostsCSV:    "cli.company.local",
 		MaxFileSizeMB:      25,
 		MaxPages:           300,
@@ -119,6 +169,10 @@ audit:
 		MaxParallelRuns:    1,
 		AuditRetentionDays: 30,
 		AuditHMACKeyID:     "cli-audit-key",
+		RuntimeProfile:     "v1",
+		InsecureNoSecrets:  false,
+		APIAuthToken:       "",
+		AuditHMACSecret:    "",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -138,6 +192,15 @@ audit:
 	}
 	if cfg.APIPartnerID != "70bd3a91-2222-2222-2222-222222222222" {
 		t.Fatalf("expected env partner_id, got %q", cfg.APIPartnerID)
+	}
+	if cfg.APIUserID != "70bd3a91-dddd-dddd-dddd-dddddddddddd" {
+		t.Fatalf("expected cli user_id, got %q", cfg.APIUserID)
+	}
+	if cfg.APIFieldsPage != 4 {
+		t.Fatalf("expected cli fields_page=4, got %d", cfg.APIFieldsPage)
+	}
+	if cfg.APIFieldsPerPage != 40 {
+		t.Fatalf("expected cli fields_per_page=40, got %d", cfg.APIFieldsPerPage)
 	}
 	if len(cfg.APIAllowedHosts) != 1 || strings.TrimSpace(cfg.APIAllowedHosts[0]) != "cli.company.local" {
 		t.Fatalf("expected CLI allowed_hosts, got %#v", cfg.APIAllowedHosts)
@@ -159,6 +222,21 @@ audit:
 	}
 	if cfg.AuditHMACKeyID != "cli-audit-key" {
 		t.Fatalf("expected CLI audit_hmac_key_id, got %q", cfg.AuditHMACKeyID)
+	}
+	if cfg.RuntimeProfile != "v1" {
+		t.Fatalf("expected CLI runtime profile=v1, got %q", cfg.RuntimeProfile)
+	}
+	if cfg.RuntimeMode != "prod" {
+		t.Fatalf("expected runtime mode=prod, got %q", cfg.RuntimeMode)
+	}
+	if !cfg.InsecureNoSecrets {
+		t.Fatalf("expected env insecure_no_secrets=true, got false")
+	}
+	if cfg.APIAuthToken != "env-auth-token" {
+		t.Fatalf("expected env api auth token, got %q", cfg.APIAuthToken)
+	}
+	if cfg.AuditHMACSecret != "env-hmac-secret" {
+		t.Fatalf("expected env audit hmac secret, got %q", cfg.AuditHMACSecret)
 	}
 }
 
@@ -227,6 +305,31 @@ func TestLoadFailsWhenRequiredFieldsMissing(t *testing.T) {
 	_, err := Load(LoadOptions{})
 	if err == nil {
 		t.Fatal("expected error for missing required fields")
+	}
+}
+
+func TestLoadAllowsExplicitFalseForInsecureNoSecretsFromCLI(t *testing.T) {
+	t.Setenv("ANON_INSECURE_NO_SECRETS", "true")
+
+	cfg, err := Load(LoadOptions{
+		RawPath:              "D:/cli-raw",
+		OutputPath:           "C:/cli/output",
+		WorkspacePath:        "C:/cli/workspace",
+		APIBaseURL:           "https://cli.company.local",
+		APIPartnerID:         "70bd3a91-5555-5555-5555-555555555555",
+		AllowedHostsCSV:      "cli.company.local",
+		MaxParallelRuns:      1,
+		InsecureNoSecrets:    false,
+		InsecureNoSecretsSet: true,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.InsecureNoSecrets {
+		t.Fatalf("expected explicit CLI false to override env true")
+	}
+	if cfg.RuntimeMode != "prod" {
+		t.Fatalf("expected runtime mode=prod without explicit legacy profile, got %q", cfg.RuntimeMode)
 	}
 }
 

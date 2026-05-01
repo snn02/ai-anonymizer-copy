@@ -2,7 +2,7 @@
 
 ## Статус
 
-`v1` работает в post-release режиме: активен подэтап `v1-1-ws`.
+`v1` работает в post-release режиме: активна миграция к mode-first модели (`prod|mvp`).
 
 ## Где лежат артефакты
 
@@ -21,6 +21,12 @@
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/tasks.md`
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-i8-mvp-config-runtime/spec.md`
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-1-ws-core/spec.md`
+- `v1-i9-cli-mode-and-overrides-simplification`:
+  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/proposal.md`
+  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/design.md`
+  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/tasks.md`
+  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/specs/v1-i9-cli-mode-and-overrides-simplification/spec.md`
+  - `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/specs/v1-1-ws-core/spec.md`
 
 ## Закрытые feature-пакеты v1
 
@@ -51,7 +57,7 @@
 
 ## Подготовленные следующие итерации
 
-- после `v1-1-ws` дополнительные post-release итерации не запланированы; `v2` остается зарезервированной под MCP-этап.
+- после завершения `v1-i9` отдельные post-release итерации будут определяться по итогам стабилизации mode-first контракта; `v2` остается зарезервированной под MCP-этап.
 
 ## Правило
 

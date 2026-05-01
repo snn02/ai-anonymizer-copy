@@ -24,6 +24,7 @@ import (
 	"ai-anonymizer/internal/audit"
 	"ai-anonymizer/internal/catalog"
 	"ai-anonymizer/internal/config"
+	"ai-anonymizer/internal/httpdebug"
 	"ai-anonymizer/internal/preflight"
 )
 
@@ -59,25 +60,10 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 	if strings.TrimSpace(target) == "" {
 		return Result{}, errors.New("run: target <id|path> is required")
 	}
-	if deps.SecretGetter == nil {
-		return Result{}, errors.New("run: secret getter is not configured")
-	}
-
-	secret, err := deps.SecretGetter.GetSecret(cfg.APIPartnerID)
-	if err != nil {
-		return Result{}, fmt.Errorf("run: secret store read failed: %w", err)
-	}
-	normalizedSecret := sanitizeHeaderValue(secret)
-	if normalizedSecret == "" {
-		return Result{}, errors.New("run: api secret was not found in OS secret store")
-	}
 	normalizedPartnerID := strings.TrimSpace(cfg.APIPartnerID)
-	auditSecret, err := deps.SecretGetter.GetSecret(cfg.AuditHMACKeyID)
+	normalizedSecret, auditSecret, err := resolveRunSecrets(cfg, deps)
 	if err != nil {
-		return Result{}, fmt.Errorf("run: audit key read failed: %w", err)
-	}
-	if strings.TrimSpace(auditSecret) == "" {
-		return Result{}, errors.New("run: audit hmac key was not found in OS secret store")
+		return Result{}, err
 	}
 
 	c := catalog.FileCatalog{Path: cfg.CatalogPath}
@@ -135,6 +121,39 @@ func Execute(cfg config.Config, target string, deps Deps) (Result, error) {
 		Item:       items[idx],
 		OutputPath: outPath,
 	}, nil
+}
+
+func resolveRunSecrets(cfg config.Config, deps Deps) (string, string, error) {
+	if strings.EqualFold(strings.TrimSpace(cfg.RuntimeMode), "mvp") {
+		secret := sanitizeHeaderValue(cfg.APIAuthToken)
+		if secret == "" {
+			return "", "", errors.New("run: api.auth_token is required in mvp mode")
+		}
+		auditSecret := strings.TrimSpace(cfg.AuditHMACSecret)
+		if auditSecret == "" {
+			return "", "", errors.New("run: audit.hmac_secret is required in mvp mode")
+		}
+		return secret, auditSecret, nil
+	}
+	if deps.SecretGetter == nil {
+		return "", "", errors.New("run: secret getter is not configured")
+	}
+	secret, err := deps.SecretGetter.GetSecret(cfg.APIPartnerID)
+	if err != nil {
+		return "", "", fmt.Errorf("run: secret store read failed: %w", err)
+	}
+	normalizedSecret := sanitizeHeaderValue(secret)
+	if normalizedSecret == "" {
+		return "", "", errors.New("run: api secret was not found in OS secret store")
+	}
+	auditSecret, err := deps.SecretGetter.GetSecret(cfg.AuditHMACKeyID)
+	if err != nil {
+		return "", "", fmt.Errorf("run: audit key read failed: %w", err)
+	}
+	if strings.TrimSpace(auditSecret) == "" {
+		return "", "", errors.New("run: audit hmac key was not found in OS secret store")
+	}
+	return normalizedSecret, auditSecret, nil
 }
 
 func resolve(items []catalog.Item, target string) (int, catalog.Item, error) {
@@ -440,9 +459,11 @@ func callFileAnonymization(cfg config.Config, filePath string, partnerID string,
 
 	resp, err := client.Do(req)
 	if err != nil {
+		httpdebug.Log(cfg, "run", req, 0, err)
 		return nil, fmt.Errorf("run: api request failed: %w", err)
 	}
 	defer resp.Body.Close()
+	httpdebug.Log(cfg, "run", req, resp.StatusCode, nil)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

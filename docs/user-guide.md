@@ -60,7 +60,7 @@ Runtime применяет значения в порядке:
 ### Секреты
 
 Для стандартного профиля `v1` секреты хранятся только в OS secret store.
-Для временного профиля `v1-1-ws` (MVP, non-production) допустимы временные секреты в `config/env/CLI` при явном `insecure_no_secrets=true`.
+Для временного режима `mvp` допустимы временные секреты в `config/env`.
 
 ### Как Сопоставить Данные От Разработчика API
 
@@ -235,16 +235,16 @@ go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml
 go run ./cmd/anonym run <id> --config C:\work\my-ai-project\config.yaml
 ```
 
-### Кейс 2. Override Через CLI (Разовый Запуск)
+### Кейс 2. Минимальный Override Через CLI
 
 Когда использовать:
-1. разово нужно проверить другой хост/лимит;
-2. важно явно зафиксировать override в истории команды.
+1. нужен запуск в другом `workspace_path`/`output_path`;
+2. нужно явно включить режим `mvp` для сессии.
 
 Пример:
 
 ```powershell
-go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --api-base-url https://pilot-retrievals.company.local --allowed-hosts pilot-retrievals.company.local
+go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --mode mvp --workspace-path C:\work\my-ai-project --output-path C:\work\my-ai-project\clean
 ```
 
 ## Диагностика Config Режима
@@ -262,17 +262,17 @@ go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --api-base
 4. Секреты не читаются из plaintext-config/env fallback.
 5. Audit пишется в `<workspace>/.anonym/audit.log` (JSONL), `file_id` хранится как HMAC.
 
-## Временный Профиль V1-1-WS (MVP Для Изолированных IDE)
+## Режим MVP Для Изолированных IDE
 
 Когда использовать:
 1. вы запускаете из изолированной среды AI IDE;
 2. runtime не имеет доступа к OS secret store хоста.
 
 Что меняется:
-1. включается явный insecure-профиль `v1-1-ws`;
-2. для API auth используется временный `api.auth_token` из env/config;
-3. для audit используется временный `audit.hmac_secret` из env/config;
-4. профиль допускается только для non-production контуров.
+1. включается режим `runtime.mode=mvp` (или `--mode mvp`);
+2. для API auth используется `api.auth_token` из env/config;
+3. для audit используется `audit.hmac_secret` из env/config;
+4. режим допускается и для production API (с warning в CLI).
 
 Что не меняется:
 1. boundary и path hardening;
@@ -280,9 +280,9 @@ go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --api-base
 3. лимиты и audit.
 
 Важно:
-1. `v1-1-ws` — временный профиль MVP, не дефолтный режим;
+1. `mvp` — временный режим MVP, не дефолтный режим;
 2. для production используйте стандартный `v1` с OS secret store;
-3. при `v1-1-ws` обязателен операционный контроль: rate-limit, быстрый revoke/rotation токена и HMAC-секрета.
+3. при `mvp` обязателен операционный контроль: rate-limit, быстрый revoke/rotation токена и HMAC-секрета.
 
 ## Быстрый Чек-Лист Перед Запуском
 
@@ -290,7 +290,7 @@ go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --api-base
 2. `api.base_url` начинается с `https://`.
 3. Host API присутствует в `allowed_hosts`.
 4. Для `v1`: в OS secret store есть записи для `api.partner_id` и `audit.hmac_key_id`.
-5. Для `v1-1-ws`: заданы `runtime.profile=v1-1-ws`, `security_flags.insecure_no_secrets=true`, `api.auth_token`, `audit.hmac_secret`.
+5. Для `mvp`: заданы `runtime.mode=mvp`, `api.auth_token`, `audit.hmac_secret`.
 6. `max_parallel_runs = 1`.
 7. `doctor` возвращает `doctor: ok`.
 
@@ -302,41 +302,40 @@ go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --api-base
 - секреты берутся только из OS secret store;
 - использование `api.auth_token` и `audit.hmac_secret` из `env/config` запрещено.
 
-2. Временный профиль `v1-1-ws` (только non-production):
-- секреты допускаются из `env/config` только при явном включении insecure-режима;
+2. Временный режим `mvp`:
+- секреты допускаются из `env/config` при `runtime.mode=mvp`;
 - обязательны оба значения: `api.auth_token` и `audit.hmac_secret`.
 
-### Как Явно Включить `v1-1-ws`
+### Как Явно Включить `mvp`
 
 Через CLI-флаги:
 
 ```powershell
-go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --runtime-profile v1-1-ws --insecure-no-secrets --api-auth-token "<API_TOKEN>" --audit-hmac-secret "<HMAC_SECRET>"
+go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --mode mvp
 
-go run ./cmd/anonym scan --config C:\work\my-ai-project\config.yaml --runtime-profile v1-1-ws --insecure-no-secrets --api-auth-token "<API_TOKEN>" --audit-hmac-secret "<HMAC_SECRET>"
+go run ./cmd/anonym scan --config C:\work\my-ai-project\config.yaml --mode mvp
 
-go run ./cmd/anonym list --config C:\work\my-ai-project\config.yaml --runtime-profile v1-1-ws --insecure-no-secrets --api-auth-token "<API_TOKEN>" --audit-hmac-secret "<HMAC_SECRET>"
+go run ./cmd/anonym list --config C:\work\my-ai-project\config.yaml --mode mvp
 
-go run ./cmd/anonym run <id|path> --config C:\work\my-ai-project\config.yaml --runtime-profile v1-1-ws --insecure-no-secrets --api-auth-token "<API_TOKEN>" --audit-hmac-secret "<HMAC_SECRET>"
+go run ./cmd/anonym run <id|path> --config C:\work\my-ai-project\config.yaml --mode mvp
 ```
 
 Через env-переменные:
 
 ```powershell
-$env:ANON_RUNTIME_PROFILE="v1-1-ws"
-$env:ANON_INSECURE_NO_SECRETS="true"
+$env:ANON_MODE="mvp"
 $env:ANON_API_AUTH_TOKEN="<API_TOKEN>"
 $env:ANON_AUDIT_HMAC_SECRET="<HMAC_SECRET>"
 ```
 
 Важно:
-- при `v1-1-ws` CLI выводит предупреждение о временном insecure-профиле;
+- при `mvp` CLI выводит предупреждение о временном insecure-режиме;
 - для production-контура используйте только стандартный `v1`.
 
 ### Чек-Лист По Профилям
 
 1. Для `v1`: проверьте записи в OS secret store (`api.partner_id`, `audit.hmac_key_id`).
-2. Для `v1-1-ws`: вместо OS secret store задайте `api.auth_token` и `audit.hmac_secret` (CLI/env/config) и включите `insecure_no_secrets=true`.
+2. Для `mvp`: вместо OS secret store задайте `api.auth_token` и `audit.hmac_secret` (env/config) и включите `runtime.mode=mvp`.
 
 ## Диагностика HTTP-Вызовов (Опционально)
 

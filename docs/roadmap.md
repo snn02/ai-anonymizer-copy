@@ -7,8 +7,9 @@
 ## v1
 
 - Цель: безопасный sidecar CLI для анонимизации.
-- Статус: completed.
-- Итерации: `v1-i1`, `v1-i2` завершены.
+- Статус: in progress (`mode=prod|mvp` migration).
+- Итерации: `v1-i1`, `v1-i2`, `v1-i3`, `v1-i4` завершены; в работе post-release итерации `v1-i7`, `v1-i8`, `v1-i9`.
+- Режим `mvp`: временный MVP-режим для запуска в изолированных AI IDE без OS secret store (с компенсирующими ограничениями и явным warning).
 - План версии: `versions/v1/plan.md`.
 - OpenSpec версии: `versions/v1/openspec.md`.
 - Лог прогресса: `versions/v1/action-log.md`.
@@ -16,7 +17,7 @@
 ## v2
 
 - Цель: MCP-обертка над trusted-core CLI.
-- Статус: planned.
+- Статус: reserved (не стартовала).
 - План версии: `versions/v2/plan.md`.
 - OpenSpec версии: `versions/v2/openspec.md`.
 - Лог прогресса: `versions/v2/action-log.md`.

@@ -385,6 +385,56 @@ func TestExecuteWritesAuditEntryWithHMACSafeFields(t *testing.T) {
 	}
 }
 
+func TestExecuteMVPUsesEnvSecretsWithoutSecretGetter(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.RuntimeMode = "mvp"
+	cfg.APIAuthToken = "session-token"
+	cfg.AuditHMACSecret = "audit-secret"
+	cfg.APIPartnerID = "70bd3a91-0000-0000-0000-000000000000"
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("PII"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	serverURL, serverClient, cleanup := newSuccessAPIClient([]byte(`{"result":"ANON"}`), "application/json")
+	defer cleanup()
+	cfg.APIBaseURL = serverURL
+	cfg.APIAllowedHosts = []string{"127.0.0.1", "localhost"}
+
+	result, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		HTTPClient: serverClient,
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if result.Item.Status != catalog.StatusSucceeded {
+		t.Fatalf("expected succeeded status, got %q", result.Item.Status)
+	}
+}
+
+func TestExecuteMVPFailsWithoutAuditSecret(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.RuntimeMode = "mvp"
+	cfg.APIAuthToken = "session-token"
+	cfg.AuditHMACSecret = ""
+
+	_, err := Execute(cfg, "x", Deps{})
+	if err == nil || !strings.Contains(err.Error(), "audit.hmac_secret") {
+		t.Fatalf("expected missing audit secret error, got %v", err)
+	}
+}
+
 func TestExecuteTrimsAuthorizationHeaderValue(t *testing.T) {
 	cfg := baseConfig(t)
 	cfg.AuditHMACKeyID = "audit-hmac-v1"
@@ -466,6 +516,57 @@ func TestExecuteRemovesControlCharsFromAuthorizationHeaderValue(t *testing.T) {
 	}
 	if gotAuth != "api-secret" {
 		t.Fatalf("unexpected Authorization header value %q", gotAuth)
+	}
+}
+
+func TestExecuteWritesHTTPDebugLogWhenEnabled(t *testing.T) {
+	t.Setenv("ANON_HTTP_DEBUG", "true")
+	cfg := baseConfig(t)
+	cfg.AuditHMACKeyID = "audit-hmac-v1"
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("PII"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	serverURL, serverClient, cleanup := newSuccessAPIClient([]byte(`{"result":"ANON"}`), "application/json")
+	defer cleanup()
+	cfg.APIBaseURL = serverURL
+	cfg.APIAllowedHosts = []string{"127.0.0.1", "localhost"}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		HTTPClient: serverClient,
+		SecretGetter: mapSecretGetter{
+			values: map[string]string{
+				cfg.APIPartnerID:   "very-secret-token",
+				cfg.AuditHMACKeyID: "audit-secret",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	logPath := filepath.Join(cfg.WorkspacePath, ".anonym", "http-debug.log")
+	data, readErr := os.ReadFile(logPath)
+	if readErr != nil {
+		t.Fatalf("expected debug log file, got %v", readErr)
+	}
+	logText := string(data)
+	if !strings.Contains(logText, "scope=run") || !strings.Contains(logText, "status=200") {
+		t.Fatalf("unexpected debug log content: %q", logText)
+	}
+	if strings.Contains(logText, "very-secret-token") {
+		t.Fatalf("authorization must be masked in debug log: %q", logText)
 	}
 }
 

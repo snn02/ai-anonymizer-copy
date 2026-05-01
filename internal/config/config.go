@@ -19,6 +19,9 @@ type Config struct {
 	AuditPath          string
 	APIBaseURL         string
 	APIPartnerID       string
+	APIUserID          string
+	APIFieldsPage      int
+	APIFieldsPerPage   int
 	APIAllowedHosts    []string
 	RequestTimeoutSec  int
 	MaxFileSizeMB      int
@@ -26,6 +29,12 @@ type Config struct {
 	MaxParallelRuns    int
 	AuditRetentionDays int
 	AuditHMACKeyID     string
+	RuntimeMode        string
+	RuntimeProfile     string
+	InsecureNoSecrets  bool
+	LegacyModeSource   string
+	APIAuthToken       string
+	AuditHMACSecret    string
 }
 
 type LoadOptions struct {
@@ -36,6 +45,9 @@ type LoadOptions struct {
 	WorkspacePath      string
 	APIBaseURL         string
 	APIPartnerID       string
+	APIUserID          string
+	APIFieldsPage      int
+	APIFieldsPerPage   int
 	AllowedHostsCSV    string
 	RequestTimeoutSec  int
 	MaxFileSizeMB      int
@@ -43,6 +55,12 @@ type LoadOptions struct {
 	MaxParallelRuns    int
 	AuditRetentionDays int
 	AuditHMACKeyID     string
+	RuntimeMode        string
+	RuntimeProfile     string
+	InsecureNoSecrets  bool
+	InsecureNoSecretsSet bool
+	APIAuthToken       string
+	AuditHMACSecret    string
 }
 
 type fileConfig struct {
@@ -54,6 +72,10 @@ type fileConfig struct {
 	API struct {
 		BaseURL   string `yaml:"base_url"`
 		PartnerID string `yaml:"partner_id"`
+		UserID    string `yaml:"user_id"`
+		FieldsPage int `yaml:"fields_page"`
+		FieldsPerPage int `yaml:"fields_per_page"`
+		AuthToken string `yaml:"auth_token"`
 	} `yaml:"api"`
 	Limits struct {
 		MaxFileSizeMB     int `yaml:"max_file_size_mb"`
@@ -67,7 +89,15 @@ type fileConfig struct {
 	Audit struct {
 		RetentionDays int    `yaml:"retention_days"`
 		HMACKeyID     string `yaml:"hmac_key_id"`
+		HMACSecret    string `yaml:"hmac_secret"`
 	} `yaml:"audit"`
+	Runtime struct {
+		Mode    string `yaml:"mode"`
+		Profile string `yaml:"profile"`
+	} `yaml:"runtime"`
+	SecurityFlags struct {
+		InsecureNoSecrets bool `yaml:"insecure_no_secrets"`
+	} `yaml:"security_flags"`
 }
 
 func Load(opts LoadOptions) (Config, error) {
@@ -82,6 +112,9 @@ func Load(opts LoadOptions) (Config, error) {
 		WorkspacePath:      firstNonEmpty(opts.WorkspacePath, os.Getenv("ANON_WORKSPACE_PATH"), fileCfg.Paths.WorkspacePath),
 		APIBaseURL:         firstNonEmpty(opts.APIBaseURL, os.Getenv("ANON_API_BASE_URL"), fileCfg.API.BaseURL),
 		APIPartnerID:       firstNonEmpty(opts.APIPartnerID, os.Getenv("ANON_API_PARTNER_ID"), fileCfg.API.PartnerID),
+		APIUserID:          firstNonEmpty(opts.APIUserID, os.Getenv("ANON_API_USER_ID"), fileCfg.API.UserID),
+		APIFieldsPage:      resolvePositiveInt(opts.APIFieldsPage, "ANON_API_FIELDS_PAGE", fileCfg.API.FieldsPage, 1),
+		APIFieldsPerPage:   resolvePositiveInt(opts.APIFieldsPerPage, "ANON_API_FIELDS_PER_PAGE", fileCfg.API.FieldsPerPage, 10),
 		APIAllowedHosts:    resolveAllowedHosts(opts.AllowedHostsCSV, os.Getenv("ANON_ALLOWED_HOSTS"), fileCfg.Security.AllowedHosts),
 		RequestTimeoutSec:  resolvePositiveInt(opts.RequestTimeoutSec, "ANON_REQUEST_TIMEOUT_SEC", fileCfg.Limits.RequestTimeoutSec, 5),
 		MaxFileSizeMB:      resolvePositiveInt(opts.MaxFileSizeMB, "ANON_MAX_FILE_SIZE_MB", fileCfg.Limits.MaxFileSizeMB, 25),
@@ -89,7 +122,15 @@ func Load(opts LoadOptions) (Config, error) {
 		MaxParallelRuns:    resolvePositiveInt(opts.MaxParallelRuns, "ANON_MAX_PARALLEL_RUNS", fileCfg.Limits.MaxParallelRuns, 1),
 		AuditRetentionDays: resolvePositiveInt(opts.AuditRetentionDays, "ANON_AUDIT_RETENTION_DAYS", fileCfg.Audit.RetentionDays, 30),
 		AuditHMACKeyID:     firstNonEmpty(opts.AuditHMACKeyID, os.Getenv("ANON_AUDIT_HMAC_KEY_ID"), fileCfg.Audit.HMACKeyID, "audit-hmac-v1"),
+		RuntimeMode:        resolveRuntimeMode(opts.RuntimeMode, os.Getenv("ANON_MODE"), fileCfg.Runtime.Mode),
+		RuntimeProfile:     resolveRuntimeProfile(opts.RuntimeProfile, os.Getenv("ANON_RUNTIME_PROFILE"), fileCfg.Runtime.Profile),
+		InsecureNoSecrets:  resolveInsecureNoSecrets(opts.InsecureNoSecrets, opts.InsecureNoSecretsSet, os.Getenv("ANON_INSECURE_NO_SECRETS"), fileCfg.SecurityFlags.InsecureNoSecrets),
+		APIAuthToken:       firstNonEmpty(opts.APIAuthToken, os.Getenv("ANON_API_AUTH_TOKEN"), fileCfg.API.AuthToken),
+		AuditHMACSecret:    firstNonEmpty(opts.AuditHMACSecret, os.Getenv("ANON_AUDIT_HMAC_SECRET"), fileCfg.Audit.HMACSecret),
 	}
+	mode, legacySource := resolveEffectiveMode(opts, fileCfg, cfg.RuntimeMode, cfg.RuntimeProfile, cfg.InsecureNoSecrets)
+	cfg.RuntimeMode = mode
+	cfg.LegacyModeSource = legacySource
 
 	if cfg.RawPath == "" {
 		return Config{}, errors.New("config: raw_path is required")
@@ -111,6 +152,61 @@ func Load(opts LoadOptions) (Config, error) {
 	cfg.AuditPath = filepath.Join(cfg.WorkspacePath, ".anonym", "audit.log")
 
 	return cfg, nil
+}
+
+func resolveEffectiveMode(opts LoadOptions, fileCfg fileConfig, explicitMode, profile string, insecure bool) (string, string) {
+	mode := strings.TrimSpace(strings.ToLower(explicitMode))
+	if mode != "" {
+		return mode, ""
+	}
+	if strings.TrimSpace(opts.RuntimeProfile) != "" {
+		return legacyProfileToMode(opts.RuntimeProfile, insecure), "cli.runtime-profile"
+	}
+	if strings.TrimSpace(os.Getenv("ANON_RUNTIME_PROFILE")) != "" {
+		return legacyProfileToMode(os.Getenv("ANON_RUNTIME_PROFILE"), insecure), "env.ANON_RUNTIME_PROFILE"
+	}
+	if strings.TrimSpace(fileCfg.Runtime.Profile) != "" {
+		return legacyProfileToMode(fileCfg.Runtime.Profile, insecure), "config.runtime.profile"
+	}
+	if insecure {
+		return "mvp", "legacy.insecure-no-secrets"
+	}
+	return "prod", ""
+}
+
+func legacyProfileToMode(profile string, insecure bool) string {
+	legacy := strings.TrimSpace(strings.ToLower(profile))
+	if legacy == "v1-1-ws" {
+		return "mvp"
+	}
+	return "prod"
+}
+
+func resolveRuntimeMode(cliValue, envValue, fileValue string) string {
+	mode := strings.ToLower(strings.TrimSpace(firstNonEmpty(cliValue, envValue, fileValue)))
+	if mode == "" {
+		return ""
+	}
+	return mode
+}
+
+func resolveRuntimeProfile(cliValue, envValue, fileValue string) string {
+	profile := strings.ToLower(strings.TrimSpace(firstNonEmpty(cliValue, envValue, fileValue)))
+	if profile == "" {
+		return "v1"
+	}
+	return profile
+}
+
+func resolveInsecureNoSecrets(cliValue bool, cliSet bool, envValue string, fileValue bool) bool {
+	if cliSet {
+		return cliValue
+	}
+	trimmed := strings.TrimSpace(strings.ToLower(envValue))
+	if trimmed == "1" || trimmed == "true" || trimmed == "yes" || trimmed == "on" {
+		return true
+	}
+	return fileValue
 }
 
 func readFileConfig(path string, explicit bool) (fileConfig, error) {

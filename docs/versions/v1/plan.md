@@ -68,17 +68,16 @@
 Артефакты OpenSpec:
 - feature-пакет: `../../../openspec/changes/v1-i4-config-first-loading/`.
 
-### Подверсия (v1-1-ws): workspace-isolated mvp profile
+### Подверсия (mvp mode): workspace-isolated mvp profile
 
 Цель подверсии:
 - обеспечить запуск в изолированных AI IDE (Codex/Claude Code/Open Code), где runtime не видит OS secret store хоста.
 
 Фичи подверсии:
-1. Вводится явный временный профиль `v1-1-ws` без OS secret store для API auth.
-2. Авторизация выполняется через runtime-параметр токена (env/config) только при включенном insecure-режиме.
-3. Audit HMAC ключ (`HMAC_SECRET`) также задается через runtime-параметр (env/config) только при включенном insecure-режиме.
-4. Для параметров `runtime.profile`, `security_flags.insecure_no_secrets`, `api.auth_token`, `audit.hmac_secret` действует единый приоритет `CLI > env > config file`.
-4. Добавляются компенсирующие ограничения: non-production scope, явные предупреждения, операционный регламент revoke/rotation.
+1. Вводится единый режим `runtime.mode=mvp` без OS secret store для API auth.
+2. Авторизация выполняется через runtime-параметры `api.auth_token` и `audit.hmac_secret` из env/config.
+3. Для `api.auth_token` и `audit.hmac_secret` действует приоритет `env > config file`.
+4. Добавляются компенсирующие ограничения: явные предупреждения, операционный регламент revoke/rotation.
 4. Документация и тестовые сценарии фиксируют, что профиль временный и должен быть заменен защищенной моделью в следующем этапе.
 
 Границы подверсии:
@@ -152,9 +151,9 @@
   - хранятся в OS secret store;
   - запрещен fallback в plaintext-конфиг;
   - в логи/ошибки секреты не попадают.
-- Временное исключение для `v1-1-ws`:
+- Временное исключение для `mvp`:
   - допускаются `api.auth_token` и `audit.hmac_secret` из env/config только при явном insecure-профиле;
-  - профиль ограничен non-production использованием;
+  - режим допускается в production API-контуре при явном включении и warning;
   - обязательны компенсирующие меры (ротация/revoke, предупреждения в CLI и документации).
 - Аудит в v1:
   - без PII и секретов;

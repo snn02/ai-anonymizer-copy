@@ -133,20 +133,19 @@
 - `--config` позволяет выбрать нестандартный путь к файлу;
 - ошибки чтения/парсинга конфига возвращаются в явном диагностируемом виде.
 
-### [v1] [p0] T12: профиль `v1-1-ws` без OS secret store
+### [v1] [p0] T12: режим `mvp` без OS secret store
 
-1. Включить профиль `v1-1-ws` и явный insecure-флаг.
-2. Передать `api.auth_token` и `audit.hmac_secret` через `config/env/CLI`.
+1. Включить `runtime.mode=mvp` (или `--mode mvp` / `ANON_MODE=mvp`).
+2. Передать `api.auth_token` и `audit.hmac_secret` через `config/env`.
 3. Выполнить `anonym doctor` и `anonym run <id|path>`.
 
 Проверки:
-- в профиле `v1-1-ws` runtime не требует OS secret store и использует токен из env/config;
-- в профиле `v1-1-ws` runtime не требует OS secret store и использует `audit.hmac_secret` из env/config;
-- профиль включается явно через `runtime-profile=v1-1-ws` и `insecure_no_secrets=true` (CLI/env/config);
-- при конфликте значений `api.auth_token`/`audit.hmac_secret` применяется приоритет `CLI > env > config file`;
-- без явного insecure-флага запуск блокируется;
-- при активном профиле выводится предупреждение о снижении security-гарантий;
-- профиль блокируется/помечается ошибкой для production-контура.
+- в режиме `mvp` runtime не требует OS secret store и использует токен из env/config;
+- в режиме `mvp` runtime не требует OS secret store и использует `audit.hmac_secret` из env/config;
+- режим включается явно через `mode=mvp` (CLI/env/config);
+- при конфликте `api.auth_token`/`audit.hmac_secret` применяется приоритет `env > config file`;
+- при активном режиме выводится предупреждение о снижении security-гарантий;
+- режим `mvp` не блокируется автоматически для production API host.
 
 ### [v1] [p1] T13: HTTP debug-лог для doctor/run
 

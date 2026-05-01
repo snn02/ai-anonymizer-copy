@@ -417,3 +417,9 @@
 - Тип: изменение
 - Описание: стартован `v1-i8-mvp-config-runtime`: устранен разрыв MVP-сценария `run` в `v1-1-ws`, добавлен тест на полный стек источников (`CLI > env > config`) без обращения к OS secret store; синхронизированы `config.example.yaml`, `user-guide`, `technical/configuration`, `test-scenarios`, `v1 plan`.
 - Ссылка: `../../../openspec/changes/v1-i8-mvp-config-runtime/tasks.md`
+
+### 2026-05-01
+
+- Тип: изменение
+- Описание: начата итерация `v1-i9-cli-mode-and-overrides-simplification`: введен единый runtime-режим `mode=prod|mvp`, CLI сокращен до минимальных override (`config/mode/workspace/output`), снят host-блок для `mvp` на production API, обновлены тесты и конфигурационный контракт.
+- Ссылка: `../../../openspec/changes/v1-i9-cli-mode-and-overrides-simplification/tasks.md`

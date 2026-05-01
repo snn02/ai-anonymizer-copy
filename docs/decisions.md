@@ -82,3 +82,19 @@
   3. примеры в user-guide не должны использовать невалидные placeholder-значения вместо UUID.
 - Причина: устранить расхождения между пользовательской документацией, техническим контрактом и runtime-проверками при вызове production API.
 - Влияние: `docs/technical/configuration.md`, `docs/user-guide.md`, `docs/versions/v1/plan.md`, `docs/user-scenarios.md`, `docs/test-scenarios.md`, `docs/versions/v1/action-log.md`.
+
+### 2026-04-27 / d-011
+
+- Решение: ввести временный подэтап `v1-1-ws` для MVP-запуска в изолированных AI IDE без доступа к OS secret store; допустить auth-токен в env/config только при явном insecure-профиле и только для non-production контуров.
+- Причина: основной сценарий ценности (запуск из Codex/Claude Code/Open Code) блокируется изоляцией окружения и недоступностью host keyring для runtime.
+- Влияние: `docs/roadmap.md`, `docs/versions/v1/plan.md`, `docs/technical/security.md`, `docs/technical/configuration.md`, `docs/user-scenarios.md`, `docs/test-scenarios.md`, `docs/versions/v1/action-log.md`.
+
+### 2026-05-01 / d-012
+
+- Решение: упростить runtime-контракт `v1` до mode-first модели:
+  1. единый режим `runtime.mode` (`prod|mvp`) вместо `runtime.profile + insecure flag`;
+  2. минимальный CLI override: только `--config`, `--mode`, `--workspace-path`, `--output-path`;
+  3. остальные параметры читаются из `config/env`;
+  4. режим `mvp` допускается для production API host с явным warning в CLI.
+- Причина: снизить операционные ошибки из-за перегруженного CLI и обеспечить практический MVP-запуск в AI IDE.
+- Влияние: `cmd/anonym/main.go`, `internal/config/config.go`, `internal/preflight/preflight.go`, `internal/anonymizer/run.go`, `docs/user-guide.md`, `docs/technical/configuration.md`, `docs/test-scenarios.md`, `docs/user-scenarios.md`, `docs/versions/v1/plan.md`, `docs/versions/v1/action-log.md`.

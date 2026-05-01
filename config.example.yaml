@@ -1,6 +1,6 @@
 # Пример конфигурации anonym CLI.
-# Для standard v1 секреты берутся из OS secret store.
-# Для MVP-профиля v1-1-ws допустимы временные секреты в config/env/CLI (non-production).
+# Для режима prod секреты берутся из OS secret store.
+# Для режима mvp допустимы временные секреты в config/env.
 
 profile: pilot
 
@@ -15,8 +15,8 @@ paths:
 api:
   base_url: "https://production-retrievals.ai.rarus-cloud.ru"
   partner_id: "da315a9a-b39c-11ef-a107-4cd98f59d07b"
-  # Для v1-1-ws: короткоживущий session token (1-8 часов).
-  auth_token: ""
+  # Для mvp: короткоживущий session token (1-8 часов).
+  auth_token: "898e0d77-80db-457e-9ebc-702b084bdb3d"
   # user-id для preflight doctor (header user-id), UUID
   user_id: "70bd3a91-1abf-11f0-a10b-f8f21e2fd431"
   # параметры пагинации для GET /v1/tasks/anonymization_fields в doctor
@@ -38,16 +38,12 @@ security:
 audit:
   retention_days: 30
   hmac_key_id: "audit-hmac-v1"
-  # Для v1-1-ws: секрет для HMAC-аудита (base64 или строка).
-  hmac_secret: ""
+  # Для mvp: секрет для HMAC-аудита (base64 или строка).
+  hmac_secret: "rSQkEsTAvbsAscSTDJW4VsAD1LfGUQ7/VNszr6nfXVM="
 
 runtime:
-  # v1 (default) | v1-1-ws (MVP для изолированных AI IDE)
-  profile: "v1"
-
-security_flags:
-  # Для v1-1-ws обязательно true.
-  insecure_no_secrets: false
+  # prod (default) | mvp
+  mode: "mvp"
 
 logging:
   level: "info"    # debug | info | warn | error

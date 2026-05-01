@@ -56,16 +56,9 @@ func runDoctor(args []string, stdout io.Writer) error {
 	fs.SetOutput(stdout)
 
 	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
-	rawPath := fs.String("raw-path", "", "Absolute path to raw files")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
-	baseURL := fs.String("api-base-url", "", "API base URL")
-	partnerID := fs.String("api-partner-id", "", "API partner ID")
-	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
-	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
-	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
-	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
-	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
+	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -75,22 +68,16 @@ func runDoctor(args []string, stdout io.Writer) error {
 	cfg, err := config.Load(config.LoadOptions{
 		ConfigPath:         *cfgPath,
 		ConfigPathExplicit: configPathExplicit,
-		RawPath:            *rawPath,
 		OutputPath:         *outputPath,
 		WorkspacePath:      *workspacePath,
-		APIBaseURL:         *baseURL,
-		APIPartnerID:       *partnerID,
-		AllowedHostsCSV:    *allowedHosts,
-		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
-		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
-		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
-		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
+		RuntimeMode:        *mode,
 	})
 	if err != nil {
 		return err
 	}
 
 	cfg.APIAllowedHosts = normalizeCSV(cfg.APIAllowedHosts)
+	printProfileWarning(cfg, stdout)
 	if err := preflight.ValidateDoctor(cfg, doctorDeps); err != nil {
 		return err
 	}
@@ -104,16 +91,9 @@ func runScan(args []string, stdout io.Writer) error {
 	fs.SetOutput(stdout)
 
 	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
-	rawPath := fs.String("raw-path", "", "Absolute path to raw files")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
-	baseURL := fs.String("api-base-url", "", "API base URL")
-	partnerID := fs.String("api-partner-id", "", "API partner ID")
-	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
-	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
-	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
-	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
-	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
+	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -122,21 +102,15 @@ func runScan(args []string, stdout io.Writer) error {
 	cfg, err := config.Load(config.LoadOptions{
 		ConfigPath:         *cfgPath,
 		ConfigPathExplicit: configPathExplicit,
-		RawPath:            *rawPath,
 		OutputPath:         *outputPath,
 		WorkspacePath:      *workspacePath,
-		APIBaseURL:         *baseURL,
-		APIPartnerID:       *partnerID,
-		AllowedHostsCSV:    *allowedHosts,
-		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
-		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
-		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
-		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
+		RuntimeMode:        *mode,
 	})
 	if err != nil {
 		return err
 	}
 	cfg.APIAllowedHosts = normalizeCSV(cfg.APIAllowedHosts)
+	printProfileWarning(cfg, stdout)
 	if err := preflight.Validate(cfg); err != nil {
 		return err
 	}
@@ -161,16 +135,9 @@ func runList(args []string, stdout io.Writer) error {
 	fs.SetOutput(stdout)
 
 	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
-	rawPath := fs.String("raw-path", "", "Absolute path to raw files")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
-	baseURL := fs.String("api-base-url", "", "API base URL")
-	partnerID := fs.String("api-partner-id", "", "API partner ID")
-	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
-	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
-	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
-	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
-	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
+	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -179,21 +146,15 @@ func runList(args []string, stdout io.Writer) error {
 	cfg, err := config.Load(config.LoadOptions{
 		ConfigPath:         *cfgPath,
 		ConfigPathExplicit: configPathExplicit,
-		RawPath:            *rawPath,
 		OutputPath:         *outputPath,
 		WorkspacePath:      *workspacePath,
-		APIBaseURL:         *baseURL,
-		APIPartnerID:       *partnerID,
-		AllowedHostsCSV:    *allowedHosts,
-		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
-		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
-		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
-		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
+		RuntimeMode:        *mode,
 	})
 	if err != nil {
 		return err
 	}
 	cfg.APIAllowedHosts = normalizeCSV(cfg.APIAllowedHosts)
+	printProfileWarning(cfg, stdout)
 	if err := preflight.Validate(cfg); err != nil {
 		return err
 	}
@@ -220,16 +181,9 @@ func runRun(args []string, stdout io.Writer) error {
 	fs.SetOutput(stdout)
 
 	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
-	rawPath := fs.String("raw-path", "", "Absolute path to raw files")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
-	baseURL := fs.String("api-base-url", "", "API base URL")
-	partnerID := fs.String("api-partner-id", "", "API partner ID")
-	allowedHosts := fs.String("allowed-hosts", "", "Comma separated list of allowed hosts")
-	requestTimeoutSec := fs.Int("request-timeout-sec", 5, "API preflight request timeout in seconds")
-	maxFileSizeMB := fs.Int("max-file-size-mb", 25, "Maximum input file size in MB")
-	maxPages := fs.Int("max-pages", 300, "Maximum pages for supported formats")
-	maxParallelRuns := fs.Int("max-parallel-runs", 1, "Maximum parallel runs for v1")
+	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")
 
 	target := ""
 	parseArgs := args
@@ -252,21 +206,15 @@ func runRun(args []string, stdout io.Writer) error {
 	cfg, err := config.Load(config.LoadOptions{
 		ConfigPath:         *cfgPath,
 		ConfigPathExplicit: configPathExplicit,
-		RawPath:            *rawPath,
 		OutputPath:         *outputPath,
 		WorkspacePath:      *workspacePath,
-		APIBaseURL:         *baseURL,
-		APIPartnerID:       *partnerID,
-		AllowedHostsCSV:    *allowedHosts,
-		RequestTimeoutSec:  intValueIfSet(fs, "request-timeout-sec", *requestTimeoutSec),
-		MaxFileSizeMB:      intValueIfSet(fs, "max-file-size-mb", *maxFileSizeMB),
-		MaxPages:           intValueIfSet(fs, "max-pages", *maxPages),
-		MaxParallelRuns:    intValueIfSet(fs, "max-parallel-runs", *maxParallelRuns),
+		RuntimeMode:        *mode,
 	})
 	if err != nil {
 		return err
 	}
 	cfg.APIAllowedHosts = normalizeCSV(cfg.APIAllowedHosts)
+	printProfileWarning(cfg, stdout)
 
 	result, err := anonymizer.Execute(cfg, target, runDeps)
 	if err != nil {
@@ -306,9 +254,11 @@ func wasFlagProvided(fs *flag.FlagSet, name string) bool {
 	return found
 }
 
-func intValueIfSet(fs *flag.FlagSet, name string, value int) int {
-	if wasFlagProvided(fs, name) {
-		return value
+func printProfileWarning(cfg config.Config, stdout io.Writer) {
+	if strings.EqualFold(strings.TrimSpace(cfg.RuntimeMode), "mvp") {
+		fmt.Fprintln(stdout, "warning: mvp insecure mode is active")
 	}
-	return 0
+	if strings.TrimSpace(cfg.LegacyModeSource) != "" {
+		fmt.Fprintf(stdout, "warning: legacy profile mapping used (%s); please migrate to runtime.mode\n", cfg.LegacyModeSource)
+	}
 }
