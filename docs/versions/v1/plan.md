@@ -77,6 +77,7 @@
 1. Вводится явный временный профиль `v1-1-ws` без OS secret store для API auth.
 2. Авторизация выполняется через runtime-параметр токена (env/config) только при включенном insecure-режиме.
 3. Audit HMAC ключ (`HMAC_SECRET`) также задается через runtime-параметр (env/config) только при включенном insecure-режиме.
+4. Для параметров `runtime.profile`, `security_flags.insecure_no_secrets`, `api.auth_token`, `audit.hmac_secret` действует единый приоритет `CLI > env > config file`.
 4. Добавляются компенсирующие ограничения: non-production scope, явные предупреждения, операционный регламент revoke/rotation.
 4. Документация и тестовые сценарии фиксируют, что профиль временный и должен быть заменен защищенной моделью в следующем этапе.
 

@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -30,6 +31,12 @@ type staticSecretGetter struct {
 
 func (s staticSecretGetter) GetSecret(partnerID string) (string, error) {
 	return s.value, nil
+}
+
+type failingSecretGetter struct{}
+
+func (failingSecretGetter) GetSecret(partnerID string) (string, error) {
+	return "", os.ErrNotExist
 }
 
 func TestRunDoctorSuccess(t *testing.T) {
@@ -556,6 +563,189 @@ func TestRunDoctorConfigEnvCLIConflictUsesCLI(t *testing.T) {
 	}
 }
 
+func TestRunDoctorPrintsWarningForV11WSProfile(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/tasks/anonymization_fields" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	prevDeps := doctorDeps
+	doctorDeps = preflight.DoctorDeps{
+		HTTPClient: server.Client(),
+	}
+	defer func() { doctorDeps = prevDeps }()
+
+	raw := filepath.Join(t.TempDir(), "raw")
+	workspace := filepath.Join(t.TempDir(), "workspace")
+	output := filepath.Join(workspace, "anonymized")
+	if err := os.MkdirAll(raw, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(output, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	err := run([]string{
+		"doctor",
+		"--raw-path", raw,
+		"--output-path", output,
+		"--workspace-path", workspace,
+		"--api-base-url", server.URL,
+		"--api-partner-id", testPartnerUUID,
+		"--allowed-hosts", "127.0.0.1,localhost",
+		"--runtime-profile", "v1-1-ws",
+		"--insecure-no-secrets",
+		"--api-auth-token", "session-token",
+		"--audit-hmac-secret", "audit-secret",
+	}, &out, &out)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if !strings.Contains(out.String(), "warning: v1-1-ws insecure profile is active") {
+		t.Fatalf("expected insecure profile warning, got %q", out.String())
+	}
+}
+
+func TestRunScanAndListPrintWarningForV11WSProfile(t *testing.T) {
+	raw := filepath.Join(t.TempDir(), "raw")
+	workspace := filepath.Join(t.TempDir(), "workspace")
+	output := filepath.Join(workspace, "anonymized")
+
+	if err := os.MkdirAll(filepath.Join(raw, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(output, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(raw, "in", "sample.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var scanOut bytes.Buffer
+	if err := run([]string{
+		"scan",
+		"--raw-path", raw,
+		"--output-path", output,
+		"--workspace-path", workspace,
+		"--api-base-url", "https://api.company.local",
+		"--api-partner-id", testPartnerUUID,
+		"--allowed-hosts", "api.company.local",
+		"--runtime-profile", "v1-1-ws",
+		"--insecure-no-secrets",
+		"--api-auth-token", "session-token",
+		"--audit-hmac-secret", "audit-secret",
+		"--max-parallel-runs", "1",
+	}, &scanOut, &scanOut); err != nil {
+		t.Fatalf("scan failed: %v", err)
+	}
+	if !strings.Contains(scanOut.String(), "warning: v1-1-ws insecure profile is active") {
+		t.Fatalf("expected insecure profile warning in scan, got %q", scanOut.String())
+	}
+
+	var listOut bytes.Buffer
+	if err := run([]string{
+		"list",
+		"--raw-path", raw,
+		"--output-path", output,
+		"--workspace-path", workspace,
+		"--api-base-url", "https://api.company.local",
+		"--api-partner-id", testPartnerUUID,
+		"--allowed-hosts", "api.company.local",
+		"--runtime-profile", "v1-1-ws",
+		"--insecure-no-secrets",
+		"--api-auth-token", "session-token",
+		"--audit-hmac-secret", "audit-secret",
+		"--max-parallel-runs", "1",
+	}, &listOut, &listOut); err != nil {
+		t.Fatalf("list failed: %v", err)
+	}
+	if !strings.Contains(listOut.String(), "warning: v1-1-ws insecure profile is active") {
+		t.Fatalf("expected insecure profile warning in list, got %q", listOut.String())
+	}
+}
+
+func TestRunV11WSUsesCLIOverEnvOverConfigWithoutSecretStore(t *testing.T) {
+	raw := filepath.Join(t.TempDir(), "raw")
+	workspace := filepath.Join(t.TempDir(), "workspace")
+	output := filepath.Join(workspace, "anonymized")
+	if err := os.MkdirAll(filepath.Join(raw, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(output, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(raw, "in", "sample.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotAuth string
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/tasks/file_anonymization":
+			gotAuth = r.Header.Get("Authorization")
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"result": "ANON"})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	prevRunDeps := runDeps
+	runDeps = anonymizer.Deps{
+		HTTPClient:   server.Client(),
+		SecretGetter: failingSecretGetter{},
+	}
+	defer func() { runDeps = prevRunDeps }()
+
+	cfgPath := writeRuntimeConfigV11WS(t, runtimeConfigV11WSValues{
+		RawPath:            raw,
+		OutputPath:         output,
+		WorkspacePath:      workspace,
+		BaseURL:            server.URL,
+		PartnerID:          testPartnerUUID,
+		AllowedHosts:       []string{"127.0.0.1", "localhost"},
+		RuntimeProfile:     "v1",
+		InsecureNoSecrets:  false,
+		APIAuthToken:       "cfg-token",
+		AuditHMACSecret:    "cfg-audit-secret",
+	})
+
+	t.Setenv("ANON_RUNTIME_PROFILE", "v1-1-ws")
+	t.Setenv("ANON_INSECURE_NO_SECRETS", "true")
+	t.Setenv("ANON_API_AUTH_TOKEN", "env-token")
+	t.Setenv("ANON_AUDIT_HMAC_SECRET", "env-audit-secret")
+
+	var scanOut bytes.Buffer
+	if err := run([]string{"scan", "--config", cfgPath}, &scanOut, &scanOut); err != nil {
+		t.Fatalf("scan failed: %v", err)
+	}
+
+	var runOut bytes.Buffer
+	err := run([]string{
+		"run",
+		catalog.BuildID("in/sample.txt"),
+		"--config", cfgPath,
+		"--runtime-profile", "v1-1-ws",
+		"--insecure-no-secrets=true",
+		"--api-auth-token", "cli-token",
+		"--audit-hmac-secret", "cli-audit-secret",
+	}, &runOut, &runOut)
+	if err != nil {
+		t.Fatalf("run failed: %v", err)
+	}
+	if !strings.Contains(runOut.String(), "run: succeeded") {
+		t.Fatalf("unexpected run output: %q", runOut.String())
+	}
+	if gotAuth != "cli-token" {
+		t.Fatalf("expected Authorization from CLI token, got %q", gotAuth)
+	}
+}
+
 func runDepsForTest(client *http.Client) anonymizer.Deps {
 	return anonymizer.Deps{
 		HTTPClient:   client,
@@ -611,4 +801,60 @@ func writeRuntimeConfig(t *testing.T, values runtimeConfigValues) string {
 
 func normalizeYAMLPath(value string) string {
 	return strings.ReplaceAll(value, "\\", "/")
+}
+
+type runtimeConfigV11WSValues struct {
+	RawPath           string
+	OutputPath        string
+	WorkspacePath     string
+	BaseURL           string
+	PartnerID         string
+	AllowedHosts      []string
+	RuntimeProfile    string
+	InsecureNoSecrets bool
+	APIAuthToken      string
+	AuditHMACSecret   string
+}
+
+func writeRuntimeConfigV11WS(t *testing.T, values runtimeConfigV11WSValues) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "config-v11ws.yaml")
+	lines := []string{
+		"paths:",
+		"  raw_path: \"" + normalizeYAMLPath(values.RawPath) + "\"",
+		"  output_path: \"" + normalizeYAMLPath(values.OutputPath) + "\"",
+		"  workspace_path: \"" + normalizeYAMLPath(values.WorkspacePath) + "\"",
+		"api:",
+		"  base_url: \"" + values.BaseURL + "\"",
+		"  partner_id: \"" + values.PartnerID + "\"",
+		"  auth_token: \"" + values.APIAuthToken + "\"",
+		"limits:",
+		"  max_file_size_mb: 25",
+		"  max_pages: 300",
+		"  request_timeout_sec: 5",
+		"  max_parallel_runs: 1",
+		"security:",
+		"  allowed_hosts:",
+	}
+	for _, host := range values.AllowedHosts {
+		trimmed := strings.TrimSpace(host)
+		if trimmed != "" {
+			lines = append(lines, "    - \""+trimmed+"\"")
+		}
+	}
+	lines = append(lines,
+		"audit:",
+		"  retention_days: 30",
+		"  hmac_key_id: \"audit-hmac-v1\"",
+		"  hmac_secret: \""+values.AuditHMACSecret+"\"",
+		"runtime:",
+		"  profile: \""+values.RuntimeProfile+"\"",
+		"security_flags:",
+		"  insecure_no_secrets: "+strconv.FormatBool(values.InsecureNoSecrets),
+	)
+	content := strings.Join(lines, "\n") + "\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write config file: %v", err)
+	}
+	return path
 }

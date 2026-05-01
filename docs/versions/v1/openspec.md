@@ -11,7 +11,16 @@
 
 ## Активные feature-пакеты v1
 
-- активных feature-пакетов нет; текущие доработки идут в рамках отладки `v1` без открытия нового feature-пакета.
+- `v1-i7-doctor-userid-pagination`:
+  - `../../../openspec/changes/v1-i7-doctor-userid-pagination/proposal.md`
+  - `../../../openspec/changes/v1-i7-doctor-userid-pagination/tasks.md`
+  - `../../../openspec/changes/v1-i7-doctor-userid-pagination/specs/v1-i7-core/spec.md`
+- `v1-i8-mvp-config-runtime`:
+  - `../../../openspec/changes/v1-i8-mvp-config-runtime/proposal.md`
+  - `../../../openspec/changes/v1-i8-mvp-config-runtime/design.md`
+  - `../../../openspec/changes/v1-i8-mvp-config-runtime/tasks.md`
+  - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-i8-mvp-config-runtime/spec.md`
+  - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-1-ws-core/spec.md`
 
 ## Закрытые feature-пакеты v1
 

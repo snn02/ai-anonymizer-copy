@@ -398,3 +398,22 @@
 - Тип: изменение
 - Описание: OpenSpec-пакет `v1-i5-http-debug-log` закрыт и перенесен в `openspec/changes/archive/2026-04-29-v1-i5-http-debug-log`; индекс `docs/versions/v1/openspec.md` синхронизирован, активные feature-пакеты `v1` очищены.
 - Ссылка: `openspec.md`
+
+### 2026-04-30
+
+- Тип: реакция
+- Описание: выполнен откат mini-change `v1-i6-doctor-post-alignment` после сверки с `docs/openapi.json`: для `/v1/tasks/anonymization_fields` восстановлен контракт `GET` (без body), изменения по `POST` удалены из active OpenSpec и документации.
+- Ссылка: `../../openapi.json`
+
+
+### 2026-04-30
+
+- Тип: изменение
+- Описание: открыт mini-change `v1-i7-doctor-userid-pagination`: preflight `doctor` выровнен с фактическим API-контрактом `anonymization_fields` (добавлены `user-id` header и query `page/per_page`), добавлены runtime-параметры в config/env/CLI.
+- Ссылка: `../../../openspec/changes/v1-i7-doctor-userid-pagination/tasks.md`
+
+### 2026-04-30
+
+- Тип: изменение
+- Описание: стартован `v1-i8-mvp-config-runtime`: устранен разрыв MVP-сценария `run` в `v1-1-ws`, добавлен тест на полный стек источников (`CLI > env > config`) без обращения к OS secret store; синхронизированы `config.example.yaml`, `user-guide`, `technical/configuration`, `test-scenarios`, `v1 plan`.
+- Ссылка: `../../../openspec/changes/v1-i8-mvp-config-runtime/tasks.md`

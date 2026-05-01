@@ -25,7 +25,7 @@
 - CLI применяет приоритет конфигурации: flags > env > file;
 - CLI проверяет доступность API и наличие секретов;
 - runtime валидирует, что `api.partner_id` имеет UUID-формат единообразно для `scan/list/run/doctor`;
-- проверка доступности `GET /v1/tasks/anonymization_fields` выполняется с auth/header-контекстом runtime (`Authorization`, `partner-id`);
+- проверка доступности `GET /v1/tasks/anonymization_fields` выполняется с auth/header/query-контекстом runtime (`Authorization`, `partner-id`, `user-id`, `page`, `per_page`);
 - CLI блокирует небезопасные конфигурации boundary/ACL;
 - ошибки возвращаются в понятном виде.
 
@@ -73,7 +73,7 @@
 Проверки:
 - запросы идут только на allowlisted host/base-url;
 - TLS-проверка включена;
-- секреты читаются из OS secret store;
+- в стандартном профиле `v1` секреты читаются из OS secret store;
 - секреты не читаются из config/env как plaintext fallback;
 - нет fallback в plaintext-конфиг;
 - секреты не попадают в логи и сообщения.
@@ -132,3 +132,30 @@
 - при конфликте соблюдается приоритет `CLI > env > config file`;
 - `--config` позволяет выбрать нестандартный путь к файлу;
 - ошибки чтения/парсинга конфига возвращаются в явном диагностируемом виде.
+
+### [v1] [p0] T12: профиль `v1-1-ws` без OS secret store
+
+1. Включить профиль `v1-1-ws` и явный insecure-флаг.
+2. Передать `api.auth_token` и `audit.hmac_secret` через `config/env/CLI`.
+3. Выполнить `anonym doctor` и `anonym run <id|path>`.
+
+Проверки:
+- в профиле `v1-1-ws` runtime не требует OS secret store и использует токен из env/config;
+- в профиле `v1-1-ws` runtime не требует OS secret store и использует `audit.hmac_secret` из env/config;
+- профиль включается явно через `runtime-profile=v1-1-ws` и `insecure_no_secrets=true` (CLI/env/config);
+- при конфликте значений `api.auth_token`/`audit.hmac_secret` применяется приоритет `CLI > env > config file`;
+- без явного insecure-флага запуск блокируется;
+- при активном профиле выводится предупреждение о снижении security-гарантий;
+- профиль блокируется/помечается ошибкой для production-контура.
+
+### [v1] [p1] T13: HTTP debug-лог для doctor/run
+
+1. Включить `ANON_HTTP_DEBUG=true`.
+2. Выполнить `anonym doctor` и `anonym run <id>`.
+3. Выключить `ANON_HTTP_DEBUG` и повторить запуск.
+
+Проверки:
+- при включенном флаге создается `<workspace>/.anonym/http-debug.log`;
+- в логе есть метод/URL/status для `doctor` и `run`;
+- `Authorization` в логе маскируется;
+- при выключенном флаге debug-лог не создается.

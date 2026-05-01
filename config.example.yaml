@@ -1,19 +1,27 @@
 # Пример конфигурации anonym CLI.
-# Важно: секреты (API key) здесь не хранить. Секреты читаются только из OS secret store.
+# Для standard v1 секреты берутся из OS secret store.
+# Для MVP-профиля v1-1-ws допустимы временные секреты в config/env/CLI (non-production).
 
 profile: pilot
 
 paths:
   # raw_path должен быть ВНЕ workspace IDE.
-  raw_path: "D:/secure-raw"
+  raw_path: "C:/!_D/projects/90-tests/anonym-test/raw_presale_1"
   # workspace_path — корень рабочего проекта в IDE.
-  workspace_path: "C:/work/ai-anonymizer"
+  workspace_path: "C:/!_D/projects/90-tests/anonym-test/anon-presale_1"
   # output_path должен быть ВНУТРИ workspace IDE.
-  output_path: "C:/work/ai-anonymizer/anonymized"
+  output_path: "C:/!_D/projects/90-tests/anonym-test/anon-presale_1/clean_inbox"
 
 api:
   base_url: "https://production-retrievals.ai.rarus-cloud.ru"
-  partner_id: "00000000-0000-0000-0000-000000000000"
+  partner_id: "da315a9a-b39c-11ef-a107-4cd98f59d07b"
+  # Для v1-1-ws: короткоживущий session token (1-8 часов).
+  auth_token: ""
+  # user-id для preflight doctor (header user-id), UUID
+  user_id: "70bd3a91-1abf-11f0-a10b-f8f21e2fd431"
+  # параметры пагинации для GET /v1/tasks/anonymization_fields в doctor
+  fields_page: 1
+  fields_per_page: 10
 
 limits:
   max_file_size_mb: 25
@@ -30,6 +38,16 @@ security:
 audit:
   retention_days: 30
   hmac_key_id: "audit-hmac-v1"
+  # Для v1-1-ws: секрет для HMAC-аудита (base64 или строка).
+  hmac_secret: ""
+
+runtime:
+  # v1 (default) | v1-1-ws (MVP для изолированных AI IDE)
+  profile: "v1"
+
+security_flags:
+  # Для v1-1-ws обязательно true.
+  insecure_no_secrets: false
 
 logging:
   level: "info"    # debug | info | warn | error
