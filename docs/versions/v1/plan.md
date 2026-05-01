@@ -119,7 +119,7 @@
   - preflight `doctor` для `anonymization_fields` использует headers `Authorization`, `partner-id`, `user-id` и query `page`, `per_page`.
 - Контракт `POST /v1/tasks/file_anonymization` в `v1`:
   - обязательные заголовки: `Authorization`, `partner-id` (UUID), `fields=anonymizer`;
-  - optional заголовки: `tags-numeration`, `user-id` (UUID);
+  - optional заголовки: `tags-numeration`, `user-id` (UUID, отправляется из `api.user_id` при непустом значении);
   - формат тела: `multipart/form-data` с обязательным полем `file`.
 - `api.partner_id` валидируется в UUID-формате единообразно в runtime-путях `scan/list/run/doctor`.
 - `scan` только обнаруживает, не отправляет в API.

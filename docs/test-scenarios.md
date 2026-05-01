@@ -115,6 +115,7 @@
 Проверки:
 - `run` отправляет файл только при явной команде пользователя;
 - запрос уходит в `POST /v1/tasks/file_anonymization` с обязательными заголовками `Authorization`, `partner-id` (UUID), `fields=anonymizer`;
+- при заданном `api.user_id` запрос также содержит header `user-id` (UUID).
 - `Content-Type` запроса соответствует `multipart/form-data` и содержит обязательное поле `file`;
 - ответ API нормализуется adapter-слоем;
 - каталог проходит переходы `scanned -> sent -> succeeded/failed`;

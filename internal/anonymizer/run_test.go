@@ -519,6 +519,110 @@ func TestExecuteRemovesControlCharsFromAuthorizationHeaderValue(t *testing.T) {
 	}
 }
 
+func TestExecuteRunSendsUserIDHeaderWhenConfigured(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.AuditHMACKeyID = "audit-hmac-v1"
+	cfg.APIUserID = "70bd3a91-9999-9999-9999-999999999999"
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("PII"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotUserID string
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/tasks/file_anonymization" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		gotUserID = r.Header.Get("user-id")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"result":"ANON"}`))
+	}))
+	defer server.Close()
+	cfg.APIBaseURL = server.URL
+	cfg.APIAllowedHosts = []string{"127.0.0.1", "localhost"}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		HTTPClient: server.Client(),
+		SecretGetter: mapSecretGetter{
+			values: map[string]string{
+				cfg.APIPartnerID:   "api-secret",
+				cfg.AuditHMACKeyID: "audit-secret",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if gotUserID != cfg.APIUserID {
+		t.Fatalf("expected user-id header %q, got %q", cfg.APIUserID, gotUserID)
+	}
+}
+
+func TestExecuteRunOmitsUserIDHeaderWhenNotConfigured(t *testing.T) {
+	cfg := baseConfig(t)
+	cfg.AuditHMACKeyID = "audit-hmac-v1"
+	cfg.APIUserID = ""
+
+	if err := os.MkdirAll(filepath.Join(cfg.RawPath, "in"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rel := "in/sample.txt"
+	filePath := filepath.Join(cfg.RawPath, filepath.FromSlash(rel))
+	if err := os.WriteFile(filePath, []byte("PII"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := catalog.FileCatalog{Path: cfg.CatalogPath}
+	if err := c.Save([]catalog.Item{
+		{ID: catalog.BuildID(rel), Path: rel, Status: catalog.StatusScanned},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotUserID string
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/tasks/file_anonymization" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		gotUserID = r.Header.Get("user-id")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"result":"ANON"}`))
+	}))
+	defer server.Close()
+	cfg.APIBaseURL = server.URL
+	cfg.APIAllowedHosts = []string{"127.0.0.1", "localhost"}
+
+	_, err := Execute(cfg, catalog.BuildID(rel), Deps{
+		HTTPClient: server.Client(),
+		SecretGetter: mapSecretGetter{
+			values: map[string]string{
+				cfg.APIPartnerID:   "api-secret",
+				cfg.AuditHMACKeyID: "audit-secret",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected success, got %v", err)
+	}
+	if gotUserID != "" {
+		t.Fatalf("expected empty user-id header, got %q", gotUserID)
+	}
+}
+
 func TestExecuteWritesHTTPDebugLogWhenEnabled(t *testing.T) {
 	t.Setenv("ANON_HTTP_DEBUG", "true")
 	cfg := baseConfig(t)

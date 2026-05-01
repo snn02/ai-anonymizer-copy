@@ -429,3 +429,9 @@
 - Тип: изменение
 - Описание: OpenSpec-пакет `v1-i9-cli-mode-and-overrides-simplification` заархивирован в `openspec/changes/archive/2026-05-01-v1-i9-cli-mode-and-overrides-simplification`; индекс `docs/versions/v1/openspec.md` синхронизирован.
 - Ссылка: `openspec.md`
+
+### 2026-05-01
+
+- Тип: изменение
+- Описание: открыт mini-change `v1-i10-run-userid-header`: для `run` запланировано выравнивание с API-контрактом `POST /v1/tasks/file_anonymization` по заголовку `user-id`; добавлены задачи на тесты и синхронизацию документации.
+- Ссылка: `../../../openspec/changes/v1-i10-run-userid-header/tasks.md`

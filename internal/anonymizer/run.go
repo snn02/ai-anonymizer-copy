@@ -456,6 +456,9 @@ func callFileAnonymization(cfg config.Config, filePath string, partnerID string,
 	req.Header.Set("Authorization", secret)
 	req.Header.Set("partner-id", partnerID)
 	req.Header.Set("fields", "anonymizer")
+	if strings.TrimSpace(cfg.APIUserID) != "" {
+		req.Header.Set("user-id", strings.TrimSpace(cfg.APIUserID))
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {

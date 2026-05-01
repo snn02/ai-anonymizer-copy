@@ -79,8 +79,9 @@
 2. `user-id` (UUID).
 
 Важно для v1 runtime:
-1. `tags`, `tags-numeration` и `user-id` не настраиваются через CLI/config/env.
-2. `fields` не настраивается через CLI/config/env и отправляется как фиксированное `anonymizer`.
+1. `tags` и `tags-numeration` не настраиваются через CLI/config/env.
+2. `user-id` задается через `api.user_id` (env/config) и отправляется в `doctor`/`run` при непустом значении.
+3. `fields` не настраивается через CLI/config/env и отправляется как фиксированное `anonymizer`.
 
 ## Валидация и security-ограничения
 

@@ -67,13 +67,13 @@ Runtime применяет значения в порядке:
 Если вам передали:
 1. `ключ` — это значение заголовка `Authorization` (кладется в keyring);
 2. `партнер` — это `partner-id` и `api.partner_id` (UUID);
-3. `пользователь` — это `user-id` (UUID-заголовок для `doctor` preflight, опционален).
+3. `пользователь` — это `user-id` (UUID-заголовок для `doctor` и `run`, опционален).
 
 ### Что Важно Для Runtime V1
 
 1. CLI отправляет `Authorization`, `partner-id`, `fields=anonymizer`.
-2. Для `run`: `user-id`, `tags`, `tags-numeration` не параметризуются через CLI/env/config.
-3. Для `doctor`: поддерживается `api.user_id` (`--api-user-id` / `ANON_API_USER_ID` / config).
+2. Для `run`: `tags`, `tags-numeration` не параметризуются через CLI/env/config.
+3. Для `doctor` и `run`: поддерживается `api.user_id` (`ANON_API_USER_ID` / config).
 
 ## Настройка Секретов В OS Secret Store
 
@@ -257,7 +257,7 @@ go run ./cmd/anonym doctor --config C:\work\my-ai-project\config.yaml --mode mvp
 ## Важные Ограничения V1
 
 1. `fields` фиксирован в `anonymizer`.
-2. `user-id` параметризуется только для `doctor` preflight и не используется в `run`.
+2. `user-id` задается через `api.user_id` и отправляется в `doctor` и `run` при непустом значении.
 3. `max_parallel_runs` в `v1` должен быть `1`.
 4. Секреты не читаются из plaintext-config/env fallback.
 5. Audit пишется в `<workspace>/.anonym/audit.log` (JSONL), `file_id` хранится как HMAC.
@@ -359,19 +359,14 @@ $env:ANON_HTTP_DEBUG="true"
 - при выключенном флаге файл лога не создается.
 
 
-## ��������� ��������� Doctor (��������� �� 2026-04-30)
+## Уточнение Контракта Doctor (Актуально На 2026-04-30)
 
-Preflight-�������� ������� `doctor` ����������:
+Preflight-проверка команды `doctor` использует:
 - `GET /v1/tasks/anonymization_fields`
 - headers: `Authorization`, `partner-id`, `user-id`
 - query: `page`, `per_page`
 
-����� runtime-��������� ��� `doctor`:
+Runtime-параметры для `doctor` задаются через `config/env`:
 1. `api.user_id` (UUID)
 2. `api.fields_page` (int, default `1`)
 3. `api.fields_per_page` (int, default `10`)
-
-CLI-�����:
-- `--api-user-id`
-- `--api-fields-page`
-- `--api-fields-per-page`

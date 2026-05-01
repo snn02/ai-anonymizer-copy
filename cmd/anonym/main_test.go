@@ -165,6 +165,9 @@ func TestRunExecutesExplicitSendByID(t *testing.T) {
 		if got := r.Header.Get("fields"); got == "" {
 			t.Fatalf("expected fields header")
 		}
+		if got := r.Header.Get("user-id"); got != "70bd3a91-8888-8888-8888-888888888888" {
+			t.Fatalf("unexpected user-id header: %q", got)
+		}
 
 		if err := r.ParseMultipartForm(2 << 20); err != nil {
 			t.Fatalf("parse multipart failed: %v", err)
@@ -197,6 +200,7 @@ func TestRunExecutesExplicitSendByID(t *testing.T) {
 		WorkspacePath: workspace,
 		BaseURL:       server.URL,
 		PartnerID:     testPartnerUUID,
+		UserID:        "70bd3a91-8888-8888-8888-888888888888",
 		AllowedHosts:  []string{"127.0.0.1", "localhost"},
 	})
 
@@ -716,6 +720,7 @@ type runtimeConfigValues struct {
 	WorkspacePath string
 	BaseURL       string
 	PartnerID     string
+	UserID        string
 	AllowedHosts  []string
 }
 
@@ -730,6 +735,11 @@ func writeRuntimeConfig(t *testing.T, values runtimeConfigValues) string {
 		"api:",
 		"  base_url: \"" + values.BaseURL + "\"",
 		"  partner_id: \"" + values.PartnerID + "\"",
+	}
+	if strings.TrimSpace(values.UserID) != "" {
+		lines = append(lines, "  user_id: \""+values.UserID+"\"")
+	}
+	lines = append(lines,
 		"limits:",
 		"  max_file_size_mb: 25",
 		"  max_pages: 300",
@@ -737,7 +747,7 @@ func writeRuntimeConfig(t *testing.T, values runtimeConfigValues) string {
 		"  max_parallel_runs: 1",
 		"security:",
 		"  allowed_hosts:",
-	}
+	)
 	for _, host := range values.AllowedHosts {
 		trimmed := strings.TrimSpace(host)
 		if trimmed != "" {

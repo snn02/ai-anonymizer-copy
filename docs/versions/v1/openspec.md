@@ -21,6 +21,12 @@
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/tasks.md`
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-i8-mvp-config-runtime/spec.md`
   - `../../../openspec/changes/v1-i8-mvp-config-runtime/specs/v1-1-ws-core/spec.md`
+- `v1-i10-run-userid-header`:
+  - `../../../openspec/changes/v1-i10-run-userid-header/proposal.md`
+  - `../../../openspec/changes/v1-i10-run-userid-header/design.md`
+  - `../../../openspec/changes/v1-i10-run-userid-header/tasks.md`
+  - `../../../openspec/changes/v1-i10-run-userid-header/specs/v1-i10-run-userid-header/spec.md`
+  - `../../../openspec/changes/v1-i10-run-userid-header/specs/v1-1-ws-core/spec.md`
 
 ## Закрытые feature-пакеты v1
 
