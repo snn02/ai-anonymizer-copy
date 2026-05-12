@@ -441,3 +441,9 @@
 - Тип: изменение
 - Описание: mini-change `v1-i10-run-userid-header` заархивирован в `openspec/changes/archive/2026-05-01-v1-i10-run-userid-header`; индекс `docs/versions/v1/openspec.md` синхронизирован.
 - Ссылка: `../../../openspec/changes/archive/2026-05-01-v1-i10-run-userid-header/tasks.md`
+
+### 2026-05-12
+
+- Тип: изменение
+- Описание: упрощен local setup: CLI по умолчанию читает `config.yaml`; `config.yaml` добавлен в `.gitignore`; `config.example.yaml` очищен от чувствительных значений и переведен на мнемо-примеры с комментариями.
+- Ссылка: `../../../config.example.yaml`

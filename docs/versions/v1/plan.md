@@ -111,6 +111,7 @@
 - Локальное состояние со статусами: `new/scanned/sent/succeeded/failed`.
 - Контракт конфигурации зафиксирован в `docs/technical/configuration.md` и шаблоне `config.example.yaml`.
 - Базовый сценарий запуска `v1`: параметры задаются в `config.yaml`, override при необходимости выполняется через env или CLI.
+- Дефолтный config-путь для команд CLI в `v1`: `./config.yaml` (если `--config` не передан).
 - Дефолты production-контура для API в `v1`: `api.base_url=https://production-retrievals.ai.rarus-cloud.ru`, `security.allowed_hosts=["production-retrievals.ai.rarus-cloud.ru"]`.
 - Интеграция с API:
   - `POST /v1/tasks/file_anonymization`

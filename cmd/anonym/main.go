@@ -55,7 +55,7 @@ func runDoctor(args []string, stdout io.Writer) error {
 	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
 	fs.SetOutput(stdout)
 
-	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
+	cfgPath := fs.String("config", "config.yaml", "Path to config file")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
 	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")
@@ -90,7 +90,7 @@ func runScan(args []string, stdout io.Writer) error {
 	fs := flag.NewFlagSet("scan", flag.ContinueOnError)
 	fs.SetOutput(stdout)
 
-	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
+	cfgPath := fs.String("config", "config.yaml", "Path to config file")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
 	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")
@@ -134,7 +134,7 @@ func runList(args []string, stdout io.Writer) error {
 	fs := flag.NewFlagSet("list", flag.ContinueOnError)
 	fs.SetOutput(stdout)
 
-	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
+	cfgPath := fs.String("config", "config.yaml", "Path to config file")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
 	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")
@@ -180,7 +180,7 @@ func runRun(args []string, stdout io.Writer) error {
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
 	fs.SetOutput(stdout)
 
-	cfgPath := fs.String("config", "config.example.yaml", "Path to config file")
+	cfgPath := fs.String("config", "config.yaml", "Path to config file")
 	outputPath := fs.String("output-path", "", "Absolute output path")
 	workspacePath := fs.String("workspace-path", "", "Absolute IDE workspace path")
 	mode := fs.String("mode", "", "Runtime mode (prod|mvp)")

@@ -80,6 +80,7 @@
 
 Ожидаемый результат:
 - runtime использует значения из `config.yaml` как базовые;
+- при запуске без `--config` runtime ищет `./config.yaml` в текущей рабочей папке;
 - для параметров с CLI-override приоритет соблюдается как `CLI > env > config file`;
 - для параметров без CLI-override действует приоритет `env > config file`;
 - компактные вызовы `doctor/scan/list/run` работают с опорой на конфиг;
